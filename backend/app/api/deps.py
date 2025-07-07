@@ -24,24 +24,21 @@ def get_current_user(
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
     # Try to get user by user_id first (more efficient) or telegram_id as fallback
     user = None
     user_id: Optional[int] = payload.get("user_id")
     telegram_id: Optional[str] = payload.get("sub")
-    
     if user_id:
         user = user_crud.get(db, id=user_id)
     elif telegram_id:
-        user = user_crud.get_by_telegram_id(db, telegram_id=telegram_id)
-    
+        users = user_crud.get_users(db, filters={"telegram_id": telegram_id})
+        user = users[0] if users else None
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
     return user
 
 

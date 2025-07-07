@@ -74,8 +74,8 @@ def telegram_auth(
         )
     
     # Get or create user
-    user = user_crud.get_by_telegram_id(db, telegram_id=str(auth_data.id))
-    
+    users = user_crud.get_users(db, filters={"telegram_id": str(auth_data.id)})
+    user = users[0] if users else None
     if not user:
         # Create new user
         user_create = UserCreate(

@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS dictionaries (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
+    is_system BOOLEAN DEFAULT false,
     is_active BOOLEAN DEFAULT true
 );
 
@@ -16,13 +17,13 @@ CREATE TABLE IF NOT EXISTS dictionary_values (
 );
 
 -- Create dictionaries
-INSERT INTO dictionaries (name, is_active) VALUES 
-    ('jump_type', true),
-    ('equipment_type', true),
-    ('equipment_name', true),
-    ('equipment_status', true),
-    ('load_status', true),
-    ('payment_status', true);
+INSERT INTO dictionaries (name, is_system, is_active) VALUES 
+    ('jump_type', true, true),
+    ('equipment_type', true, true),
+    ('equipment_name', true, true),
+    ('equipment_status', true, true),
+    ('load_status', true, true),
+    ('payment_status', true, true);
 
 -- Get dictionary IDs (we'll use hardcoded values for simplicity)
 -- In a real deployment, you'd want to handle this more carefully

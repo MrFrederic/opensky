@@ -74,6 +74,7 @@ class Dictionary(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False, unique=True)
+    is_system = Column(Boolean, default=False)  # Prevents deletion of system dictionaries
     is_active = Column(Boolean, default=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())

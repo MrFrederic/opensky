@@ -5,12 +5,7 @@ export interface UsersListParams {
   skip?: number;
   limit?: number;
   role?: UserRole;
-}
-
-export interface UsersSearchParams {
-  q: string;
-  skip?: number;
-  limit?: number;
+  search?: string;
 }
 
 export interface CreateUserData {
@@ -24,15 +19,9 @@ export interface CreateUserData {
 }
 
 export const usersService = {
-  // Get all users (with optional filtering)
+  // Get all users (with optional filtering and search)
   getUsers: async (params: UsersListParams = {}): Promise<User[]> => {
     const response = await api.get('/users/', { params });
-    return response.data;
-  },
-
-  // Search users
-  searchUsers: async (params: UsersSearchParams): Promise<User[]> => {
-    const response = await api.get('/users/search', { params });
     return response.data;
   },
 

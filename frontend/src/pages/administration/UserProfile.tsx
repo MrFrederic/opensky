@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { AdminOnly } from '@/components/auth/RoleGuard';
 import { usersService } from '@/services/users';
 import { User, UserRole } from '@/types';
@@ -36,6 +37,13 @@ const UserProfile: React.FC = () => {
     enabled: !!id,
   });
 
+  // Handle query errors with toast
+  useEffect(() => {
+    if (userQuery.error && userQuery.error instanceof Error) {
+      toast.error(`Failed to load user: ${userQuery.error.message}`);
+    }
+  }, [userQuery.error]);
+
   const user = userQuery.data;
 
   // Update form when user data loads
@@ -61,7 +69,11 @@ const UserProfile: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['user', id] });
+      toast.success('User updated successfully');
       setIsEditing(false);
+    },
+    onError: (error) => {
+      toast.error(`Failed to update user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     },
   });
 
@@ -71,6 +83,10 @@ const UserProfile: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['user', id] });
+      toast.success('User roles updated successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update user roles: ${error instanceof Error ? error.message : 'Unknown error'}`);
     },
   });
 
@@ -79,6 +95,7 @@ const UserProfile: React.FC = () => {
     mutationFn: () => usersService.deleteUser(Number(id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('User deleted successfully');
       // If the deleted user is the current user, log them out
       if (currentUser && currentUser.id === Number(id)) {
         logout();
@@ -86,6 +103,9 @@ const UserProfile: React.FC = () => {
       } else {
         navigate('/admin/users');
       }
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     },
   });
 

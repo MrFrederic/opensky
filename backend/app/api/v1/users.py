@@ -70,25 +70,17 @@ def list_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     role: UserRole = Query(None),
+    search: str = Query(None, min_length=2),
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_admin_user)
 ):
-    """List all users (admin only)"""
+    """List all users or search users by name or username (admin only)"""
+    filters = {}
+    if search:
+        filters['search'] = search
     if role:
-        return user_crud.get_users_by_role(db, role=role, skip=skip, limit=limit)
-    return user_crud.get_multi(db, skip=skip, limit=limit)
-
-
-@router.get("/search", response_model=List[UserResponse])
-def search_users(
-    q: str = Query(..., min_length=2),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
-    db: Session = Depends(get_db),
-    admin_user: User = Depends(get_admin_user)
-):
-    """Search users by name or username (admin only)"""
-    return user_crud.search_users(db, query=q, skip=skip, limit=limit)
+        filters['role'] = role
+    return user_crud.get_users(db, filters=filters, skip=skip, limit=limit)
 
 
 @router.post("/", response_model=UserResponse)
@@ -99,31 +91,28 @@ def create_user(
 ):
     """Create a new user (admin only)"""
     # Check if user with same telegram_id already exists
-    existing_user = user_crud.get_by_telegram_id(db, telegram_id=user_create.telegram_id)
+    existing_user = user_crud.get_users(db, filters={"telegram_id": user_create.telegram_id})
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this Telegram ID already exists"
         )
-    
     # Check if username is provided and already exists
     if user_create.username and user_create.username.strip():
-        existing_username = user_crud.get_by_username(db, username=user_create.username)
+        existing_username = user_crud.get_users(db, filters={"username": user_create.username})
         if existing_username:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Username already exists"
             )
-    
     # Check if email is provided and already exists
     if user_create.email and user_create.email.strip():
-        existing_email = user_crud.get_by_email(db, email=user_create.email)
+        existing_email = user_crud.get_users(db, filters={"email": user_create.email})
         if existing_email:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already exists"
             )
-    
     return user_crud.create(db, obj_in=user_create, created_by=admin_user.id)
 
 

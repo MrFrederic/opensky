@@ -1,6 +1,6 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from app.crud.base import CRUDBase
 from app.models.base import User, UserRole, UserRoleAssignment
 from app.schemas.users import UserCreate, UserUpdate
@@ -10,33 +10,40 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     def get(self, db: Session, id: int) -> Optional[User]:
         """Get user by id with roles loaded"""
         return db.query(User).options(joinedload(User.roles)).filter(User.id == id).first()
-    
-    def get_by_telegram_id(self, db: Session, *, telegram_id: str) -> Optional[User]:
-        """Get user by Telegram ID with roles loaded"""
-        return (
-            db.query(User)
-            .options(joinedload(User.roles))
-            .filter(User.telegram_id == telegram_id)
-            .first()
-        )
 
-    def get_by_username(self, db: Session, *, username: str) -> Optional[User]:
-        """Get user by username with roles loaded"""
-        return (
-            db.query(User)
-            .options(joinedload(User.roles))
-            .filter(User.username == username)
-            .first()
-        )
-
-    def get_by_email(self, db: Session, *, email: str) -> Optional[User]:
-        """Get user by email with roles loaded"""
-        return (
-            db.query(User)
-            .options(joinedload(User.roles))
-            .filter(User.email == email)
-            .first()
-        )
+    def get_users(
+        self,
+        db: Session,
+        *,
+        filters: Optional[Dict[str, Any]] = None,
+        skip: int = 0,
+        limit: int = 100
+    ) -> List[User]:
+        """Get users with flexible filters (id, telegram_id, username, email, role, search, etc)"""
+        query = db.query(User).options(joinedload(User.roles))
+        if filters:
+            if 'search' in filters and filters['search']:
+                search_pattern = f"%{filters['search'].lower()}%"
+                query = query.filter(
+                    or_(
+                        User.first_name.ilike(search_pattern),
+                        User.last_name.ilike(search_pattern),
+                        User.username.ilike(search_pattern),
+                        User.phone.ilike(search_pattern),
+                        User.email.ilike(search_pattern)
+                    )
+                )
+            if 'id' in filters:
+                query = query.filter(User.id == filters['id'])
+            if 'telegram_id' in filters:
+                query = query.filter(User.telegram_id == filters['telegram_id'])
+            if 'username' in filters:
+                query = query.filter(User.username == filters['username'])
+            if 'email' in filters:
+                query = query.filter(User.email == filters['email'])
+            if 'role' in filters:
+                query = query.join(UserRoleAssignment).filter(UserRoleAssignment.role == filters['role'])
+        return query.offset(skip).limit(limit).all()
 
     def create(self, db: Session, *, obj_in: UserCreate, created_by: Optional[int] = None) -> User:
         """Create a new user with default tandem_jumper role"""
@@ -71,39 +78,9 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         db.refresh(db_obj)
         return db_obj
 
-    def search_users(self, db: Session, *, query: str, skip: int = 0, limit: int = 100) -> List[User]:
-        """Search users by name or username"""
-        search_pattern = f"%{query.lower()}%"
-        return (
-            db.query(User)
-            .options(joinedload(User.roles))
-            .filter(
-                or_(
-                    User.first_name.ilike(search_pattern),
-                    User.last_name.ilike(search_pattern),
-                    User.username.ilike(search_pattern)
-                )
-            )
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
-
-    def get_users_by_role(self, db: Session, *, role: UserRole, skip: int = 0, limit: int = 100) -> List[User]:
-        """Get users by role"""
-        return (
-            db.query(User)
-            .options(joinedload(User.roles))
-            .join(UserRoleAssignment)
-            .filter(UserRoleAssignment.role == role)
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
-
     def get_admins(self, db: Session, *, skip: int = 0, limit: int = 100) -> List[User]:
         """Get all admin users"""
-        return self.get_users_by_role(db, role=UserRole.ADMINISTRATOR, skip=skip, limit=limit)
+        return self.get_users(db, filters={"role": UserRole.ADMINISTRATOR}, skip=skip, limit=limit)
     
     def add_role(self, db: Session, *, user: User, role: UserRole, created_by: Optional[int] = None) -> User:
         """Add a role to a user"""

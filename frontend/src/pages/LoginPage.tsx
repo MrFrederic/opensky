@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '@/stores/auth';
 import { authService, TelegramAuthData } from '@/services/auth';
 import TelegramLoginButton from '@/components/auth/TelegramLoginButton';
@@ -21,7 +22,10 @@ const LoginPage: React.FC = () => {
     // Get the Telegram bot username from API
     authService.getTelegramBotUsername()
       .then(response => setBotUsername(response.username))
-      .catch(error => console.error('Failed to get Telegram bot username:', error))
+      .catch(error => {
+        console.error('Failed to get Telegram bot username:', error);
+        toast.error('Failed to initialize login. Please refresh the page.');
+      })
       .finally(() => setIsLoading(false));
   }, []);
   
@@ -39,9 +43,11 @@ const LoginPage: React.FC = () => {
       
       // Update authentication state with the real user data
       setAuth(userData, tokens);
+      toast.success('Successfully logged in!');
       navigate('/');
     } catch (error) {
       console.error('Authentication failed:', error);
+      toast.error(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
   

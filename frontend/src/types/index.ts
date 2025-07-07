@@ -104,9 +104,11 @@ export type TandemBookingStatus = 'confirmed' | 'cancelled';
 export interface Dictionary {
   id: number;
   name: string;
+  is_system: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  values?: DictionaryValue[];
 }
 
 export interface DictionaryValue {

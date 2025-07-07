@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { AdminOnly } from '@/components/auth/RoleGuard';
 import { usersService, CreateUserData } from '@/services/users';
 import { UserRole } from '@/types';
@@ -32,6 +33,7 @@ const UserCreate: React.FC = () => {
     },
     onSuccess: (newUser) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('User created successfully');
       navigate(`/admin/users/${newUser.id}`);
     },
     onError: (error: any) => {
@@ -39,6 +41,9 @@ const UserCreate: React.FC = () => {
       // Handle validation errors from backend
       if (error.response?.data?.detail) {
         setErrors({ general: error.response.data.detail });
+        toast.error(`Failed to create user: ${error.response.data.detail}`);
+      } else {
+        toast.error(`Failed to create user: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     },
   });

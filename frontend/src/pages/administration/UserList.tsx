@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { AdminOnly } from '@/components/auth/RoleGuard';
 import { usersService } from '@/services/users';
 import UserTable from '@/components/admin/UserTable';
@@ -11,24 +12,23 @@ const UserList: React.FC = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<UserRole | ''>('');
-  const [isSearchMode, setIsSearchMode] = useState(false);
 
-  // Fetch users query
+  // Fetch users query - now handles both search and filter
   const usersQuery = useQuery({
-    queryKey: ['users', roleFilter],
+    queryKey: ['users', roleFilter, searchQuery],
     queryFn: () => usersService.getUsers({ 
       role: roleFilter || undefined,
+      search: searchQuery && searchQuery.length >= 2 ? searchQuery : undefined,
       limit: 100 
     }),
-    enabled: !isSearchMode,
   });
 
-  // Search users query
-  const searchQuery_ = useQuery({
-    queryKey: ['users', 'search', searchQuery],
-    queryFn: () => usersService.searchUsers({ q: searchQuery, limit: 100 }),
-    enabled: isSearchMode && searchQuery.length >= 2,
-  });
+  // Handle query errors with toast
+  useEffect(() => {
+    if (usersQuery.error && usersQuery.error instanceof Error) {
+      toast.error(`Failed to load users: ${usersQuery.error.message}`);
+    }
+  }, [usersQuery.error]);
 
   const handleUserClick = (userId: number) => {
     navigate(`/admin/users/${userId}`);
@@ -40,21 +40,16 @@ const UserList: React.FC = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.length >= 2) {
-      setIsSearchMode(true);
-    } else {
-      setIsSearchMode(false);
-    }
+    // Search is now handled automatically by the query key change
   };
 
   const handleClearSearch = () => {
     setSearchQuery('');
-    setIsSearchMode(false);
   };
 
-  const users = isSearchMode ? searchQuery_.data : usersQuery.data;
-  const isLoading = isSearchMode ? searchQuery_.isLoading : usersQuery.isLoading;
-  const error = isSearchMode ? searchQuery_.error : usersQuery.error;
+  const users = usersQuery.data;
+  const isLoading = usersQuery.isLoading;
+  const error = usersQuery.error;
 
   return (
     <AdminOnly fallback={
@@ -99,7 +94,7 @@ const UserList: React.FC = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 />
-                {isSearchMode && (
+                {searchQuery && (
                   <button
                     type="button"
                     onClick={handleClearSearch}
@@ -112,28 +107,26 @@ const UserList: React.FC = () => {
             </form>
 
             {/* Role Filter */}
-            {!isSearchMode && (
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-gray-400" />
-                <select
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value as UserRole | '')}
-                  className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">All Roles</option>
-                  <option value={UserRole.TANDEM_JUMPER}>Tandem Jumper</option>
-                  <option value={UserRole.AFF_STUDENT}>AFF Student</option>
-                  <option value={UserRole.SPORT_PAID}>Sport Paid</option>
-                  <option value={UserRole.SPORT_FREE}>Sport Free</option>
-                  <option value={UserRole.TANDEM_INSTRUCTOR}>Tandem Instructor</option>
-                  <option value={UserRole.AFF_INSTRUCTOR}>AFF Instructor</option>
-                  <option value={UserRole.ADMINISTRATOR}>Administrator</option>
-                </select>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-400" />
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value as UserRole | '')}
+                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Roles</option>
+                <option value={UserRole.TANDEM_JUMPER}>Tandem Jumper</option>
+                <option value={UserRole.AFF_STUDENT}>AFF Student</option>
+                <option value={UserRole.SPORT_PAID}>Sport Paid</option>
+                <option value={UserRole.SPORT_FREE}>Sport Free</option>
+                <option value={UserRole.TANDEM_INSTRUCTOR}>Tandem Instructor</option>
+                <option value={UserRole.AFF_INSTRUCTOR}>AFF Instructor</option>
+                <option value={UserRole.ADMINISTRATOR}>Administrator</option>
+              </select>
+            </div>
           </div>
 
-          {isSearchMode && (
+          {searchQuery && (
             <div className="mt-2 text-sm text-gray-500">
               {searchQuery.length < 2 ? 'Enter at least 2 characters to search' : 
                `Searching for "${searchQuery}"`}

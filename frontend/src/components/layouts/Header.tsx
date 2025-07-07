@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '@/stores/auth';
 import { authService } from '@/services/auth';
 import { formatUserName } from '@/lib/utils';
@@ -15,9 +16,11 @@ const Header: React.FC = () => {
   const handleLogout = async () => {
     try {
       await authService.logout();
+      toast.success('Successfully logged out');
       navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);
+      toast.error(`Logout failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       // Even if the API call fails, clear local state and redirect
       useAuthStore.getState().logout();
       navigate('/login');
@@ -101,6 +104,12 @@ const Header: React.FC = () => {
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
                           Users
+                        </Link>
+                        <Link
+                          to="/admin/dictionaries"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Dictionaries
                         </Link>
                       </div>
                     )}

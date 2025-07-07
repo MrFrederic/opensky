@@ -29,6 +29,7 @@ class DictionaryValueResponse(DictionaryValueBase):
 
 class DictionaryBase(BaseModel):
     name: str
+    is_system: bool = False
     is_active: bool = True
 
 
@@ -38,6 +39,7 @@ class DictionaryCreate(DictionaryBase):
 
 class DictionaryUpdate(BaseModel):
     name: Optional[str] = None
+    is_system: Optional[bool] = None
     is_active: Optional[bool] = None
 
 
