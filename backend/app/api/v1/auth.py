@@ -13,7 +13,7 @@ from app.crud.users import user as user_crud
 from app.crud.auth import refresh_token as refresh_token_crud
 from app.schemas.users import UserCreate, UserResponse, TokenResponse, TelegramAuthData, TokenData
 from app.schemas.settings import BotUsername
-from app.models.base import UserStatus, User
+from app.models.base import UserRole, User
 from app.api.deps import get_current_user
 
 router = APIRouter()
@@ -83,7 +83,7 @@ def telegram_auth(
             first_name=auth_data.first_name,
             last_name=auth_data.last_name or "",
             username=auth_data.username,
-            status=UserStatus.NEWBY
+            roles=[UserRole.TANDEM_JUMPER]  # Default role for new users
         )
         user = user_crud.create(db, obj_in=user_create)
     

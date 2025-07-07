@@ -45,4 +45,9 @@ export const queryKeys = {
 
   // Dictionaries
   dictionaryValues: (dictionaryName: string) => ['dictionaryValues', dictionaryName],
+
+  // Users (Admin)
+  users: (role?: string) => ['users', role],
+  usersSearch: (query: string) => ['users', 'search', query],
+  user: (id: number) => ['user', id],
 };

@@ -131,11 +131,7 @@ def initialize_data():
             existing_dicts = dict_crud.get_multi(db, limit=1)
             
             if not existing_dicts:
-                print("📝 No initial data found, running initialization...")
-                # Import and run the initialization script
-                from init_dev_db import init_db
-                init_db()
-                print("✅ Initial data created")
+                print("📝 No initial data found")
             else:
                 print("✅ Initial data already exists")
             

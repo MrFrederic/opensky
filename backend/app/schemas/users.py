@@ -1,7 +1,14 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
-from app.models.base import UserStatus
+from app.models.base import UserRole
+
+
+class UserRoleResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
+    role: UserRole
+    created_at: datetime
 
 
 class UserBase(BaseModel):
@@ -10,12 +17,11 @@ class UserBase(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
-    status: UserStatus = UserStatus.NEWBY
-    is_admin: bool = False
 
 
 class UserCreate(UserBase):
     telegram_id: str
+    roles: Optional[List[UserRole]] = None
 
 
 class UserUpdate(BaseModel):
@@ -24,9 +30,11 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
-    status: Optional[UserStatus] = None
-    is_admin: Optional[bool] = None
     license_document_url: Optional[str] = None
+
+
+class UserRoleUpdate(BaseModel):
+    roles: List[UserRole]
 
 
 class UserResponse(UserBase):
@@ -35,6 +43,7 @@ class UserResponse(UserBase):
     id: int
     telegram_id: str
     license_document_url: Optional[str] = None
+    roles: List[UserRoleResponse] = []
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -46,7 +55,7 @@ class UserSummary(BaseModel):
     first_name: str
     last_name: str
     username: Optional[str] = None
-    status: UserStatus
+    roles: List[UserRole] = []
 
 
 class TokenResponse(BaseModel):

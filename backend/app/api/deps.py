@@ -1,11 +1,11 @@
-from typing import Optional
+from typing import Optional, List
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import verify_token
 from app.crud.users import user as user_crud
-from app.models.base import User, UserStatus
+from app.models.base import User, UserRole
 
 security = HTTPBearer()
 
@@ -56,23 +56,49 @@ def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
     """
     Require admin privileges
     """
-    if not current_user.is_admin:
+    user_roles = [role_assignment.role for role_assignment in current_user.roles]
+    if UserRole.ADMINISTRATOR not in user_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
+            detail="Administrator privileges required"
         )
     return current_user
 
 
-def get_sportsman_or_admin(current_user: User = Depends(get_current_user)) -> User:
+def get_user_with_roles(required_roles: List[UserRole]):
     """
-    Require sportsman status or admin privileges
+    Create a dependency that requires any of the specified roles
     """
-    allowed_statuses = [UserStatus.SPORTSMAN, UserStatus.INDIVIDUAL_SPORTSMAN, UserStatus.INSTRUCTOR]
-    if current_user.status not in allowed_statuses and not current_user.is_admin:
+    def check_roles(current_user: User = Depends(get_current_user)) -> User:
+        user_roles = [role_assignment.role for role_assignment in current_user.roles]
+        
+        # Admin always has access
+        if UserRole.ADMINISTRATOR in user_roles:
+            return current_user
+            
+        # Check if user has any of the required roles
+        if not any(role in user_roles for role in required_roles):
+            roles_str = ", ".join([role.value for role in required_roles])
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"One of these roles required: {roles_str}"
+            )
+        return current_user
+    
+    return check_roles
+
+
+def get_sport_jumper_or_admin(current_user: User = Depends(get_current_user)) -> User:
+    """
+    Require sport jumper roles or admin privileges
+    """
+    user_roles = [role_assignment.role for role_assignment in current_user.roles]
+    allowed_roles = [UserRole.SPORT_PAID, UserRole.SPORT_FREE, UserRole.ADMINISTRATOR]
+    
+    if not any(role in user_roles for role in allowed_roles):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Sportsman status or admin privileges required"
+            detail="Sport jumper status or admin privileges required"
         )
     return current_user
 
@@ -81,9 +107,42 @@ def get_instructor_or_admin(current_user: User = Depends(get_current_user)) -> U
     """
     Require instructor status or admin privileges
     """
-    if current_user.status != UserStatus.INSTRUCTOR and not current_user.is_admin:
+    user_roles = [role_assignment.role for role_assignment in current_user.roles]
+    allowed_roles = [UserRole.TANDEM_INSTRUCTOR, UserRole.AFF_INSTRUCTOR, UserRole.ADMINISTRATOR]
+    
+    if not any(role in user_roles for role in allowed_roles):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Instructor status or admin privileges required"
+        )
+    return current_user
+
+
+def get_tandem_instructor_or_admin(current_user: User = Depends(get_current_user)) -> User:
+    """
+    Require tandem instructor status or admin privileges
+    """
+    user_roles = [role_assignment.role for role_assignment in current_user.roles]
+    allowed_roles = [UserRole.TANDEM_INSTRUCTOR, UserRole.ADMINISTRATOR]
+    
+    if not any(role in user_roles for role in allowed_roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tandem instructor status or admin privileges required"
+        )
+    return current_user
+
+
+def get_aff_instructor_or_admin(current_user: User = Depends(get_current_user)) -> User:
+    """
+    Require AFF instructor status or admin privileges
+    """
+    user_roles = [role_assignment.role for role_assignment in current_user.roles]
+    allowed_roles = [UserRole.AFF_INSTRUCTOR, UserRole.ADMINISTRATOR]
+    
+    if not any(role in user_roles for role in allowed_roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="AFF instructor status or admin privileges required"
         )
     return current_user

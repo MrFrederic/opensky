@@ -1,15 +1,18 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, Date, Enum
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, Date, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 import enum
 
 
-class UserStatus(str, enum.Enum):
-    NEWBY = "newby"
-    INDIVIDUAL_SPORTSMAN = "individual_sportsman"
-    SPORTSMAN = "sportsman"
-    INSTRUCTOR = "instructor"
+class UserRole(str, enum.Enum):
+    TANDEM_JUMPER = "tandem_jumper"
+    AFF_STUDENT = "aff_student"
+    SPORT_PAID = "sport_paid"
+    SPORT_FREE = "sport_free"
+    TANDEM_INSTRUCTOR = "tandem_instructor"
+    AFF_INSTRUCTOR = "aff_instructor"
+    ADMINISTRATOR = "administrator"
 
 
 class ManifestStatus(str, enum.Enum):
@@ -33,8 +36,6 @@ class User(Base):
     username = Column(String, unique=True, nullable=True)
     email = Column(String, unique=True, nullable=True)
     phone = Column(String, nullable=True)
-    status = Column(Enum(UserStatus), default=UserStatus.NEWBY)
-    is_admin = Column(Boolean, default=False)
     license_document_url = Column(Text, nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -43,10 +44,29 @@ class User(Base):
     updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     
     # Relationships
+    roles = relationship("UserRoleAssignment", foreign_keys="UserRoleAssignment.user_id", back_populates="user", cascade="all, delete-orphan")
     manifests = relationship("Manifest", foreign_keys="Manifest.user_id", back_populates="user")
     jumps = relationship("Jump", foreign_keys="Jump.user_id", back_populates="user")
     tandem_jumps = relationship("Jump", foreign_keys="Jump.passenger_id", back_populates="passenger")
     tandem_bookings = relationship("TandemBooking", foreign_keys="TandemBooking.user_id", back_populates="user")
+
+
+class UserRoleAssignment(Base):
+    __tablename__ = "user_roles"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    role = Column(Enum(UserRole), nullable=False)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_by = Column(Integer, ForeignKey('users.id'), nullable=True)
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id], back_populates="roles")
+    
+    __table_args__ = (
+        UniqueConstraint('user_id', 'role', name='uq_user_role'),
+    )
 
 
 class Dictionary(Base):

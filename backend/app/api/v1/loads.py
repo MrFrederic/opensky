@@ -2,14 +2,14 @@ from typing import List
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from app.api.deps import get_current_user, get_admin_user, get_sportsman_or_admin
+from app.api.deps import get_current_user, get_admin_user, get_sport_jumper_or_admin
 from app.core.database import get_db
 from app.crud.loads import load as load_crud, jump as jump_crud
 from app.schemas.loads import (
     LoadResponse, LoadCreate, LoadUpdate,
     JumpResponse, JumpCreate, JumpUpdate
 )
-from app.models.base import User
+from app.models.base import User, UserRole
 
 router = APIRouter()
 
@@ -22,7 +22,7 @@ def list_loads(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_sportsman_or_admin)
+    current_user: User = Depends(get_sport_jumper_or_admin)
 ):
     """List loads"""
     if start_date and end_date:
@@ -46,7 +46,7 @@ def create_load(
 def get_load(
     load_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_sportsman_or_admin)
+    current_user: User = Depends(get_sport_jumper_or_admin)
 ):
     """Get load by ID"""
     load = load_crud.get(db, id=load_id)
@@ -103,7 +103,7 @@ def delete_load(
 def get_load_jumps(
     load_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_sportsman_or_admin)
+    current_user: User = Depends(get_sport_jumper_or_admin)
 ):
     """Get all jumps in a load"""
     load = load_crud.get(db, id=load_id)
@@ -169,7 +169,8 @@ def get_jump(
         )
     
     # Users can only see their own jumps unless they're admin
-    if jump.user_id != current_user.id and not current_user.is_admin:
+    user_roles = [role_assignment.role for role_assignment in current_user.roles]
+    if jump.user_id != current_user.id and UserRole.ADMINISTRATOR not in user_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions"

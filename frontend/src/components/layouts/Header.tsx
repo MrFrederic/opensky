@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth';
 import { authService } from '@/services/auth';
 import { formatUserName } from '@/lib/utils';
 import { useUser } from '@/hooks/useUser';
+import { RoleGuard, ExcludeNewUsers, AdminOnly } from '@/components/auth/RoleGuard';
 
 const Header: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
   const { user, isLoading } = useUser();
   const navigate = useNavigate();
+  const [showAdminDropdown, setShowAdminDropdown] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -40,25 +42,70 @@ const Header: React.FC = () => {
             </Link>
             {isAuthenticated && (
               <>
-                <Link to="/dashboard" className="text-gray-500 hover:text-gray-900">
-                  Dashboard
-                </Link>
-                <Link to="/tandems" className="text-gray-500 hover:text-gray-900">
-                  Tandems
-                </Link>
-                {user?.status !== 'newby' && (
-                  <>
+                <RoleGuard permission="VIEW_DASHBOARD">
+                  <Link to="/dashboard" className="text-gray-500 hover:text-gray-900">
+                    Dashboard
+                  </Link>
+                </RoleGuard>
+                <RoleGuard permission="VIEW_TANDEMS">
+                  <Link to="/tandems" className="text-gray-500 hover:text-gray-900">
+                    Tandems
+                  </Link>
+                </RoleGuard>
+                <ExcludeNewUsers>
+                  <RoleGuard permission="VIEW_MANIFEST">
                     <Link to="/manifest" className="text-gray-500 hover:text-gray-900">
                       Manifest
                     </Link>
+                  </RoleGuard>
+                  <RoleGuard permission="VIEW_LOGBOOK">
                     <Link to="/logbook" className="text-gray-500 hover:text-gray-900">
                       Logbook
                     </Link>
+                  </RoleGuard>
+                  <RoleGuard permission="VIEW_LOADS">
                     <Link to="/loads" className="text-gray-500 hover:text-gray-900">
                       Loads
                     </Link>
-                  </>
-                )}
+                  </RoleGuard>
+                </ExcludeNewUsers>
+                
+                {/* Administration Dropdown */}
+                <AdminOnly>
+                  <div 
+                    className="relative"
+                    onMouseEnter={() => setShowAdminDropdown(true)}
+                    onMouseLeave={() => setShowAdminDropdown(false)}
+                  >
+                    <button className="text-gray-500 hover:text-gray-900 flex items-center">
+                      Administration
+                      <svg 
+                        className="w-4 h-4 ml-1" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={2} 
+                          d="M19 9l-7 7-7-7" 
+                        />
+                      </svg>
+                    </button>
+                    
+                    {showAdminDropdown && (
+                      <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                        <Link
+                          to="/admin/users"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Users
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </AdminOnly>
               </>
             )}
           </nav>

@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from app.api.deps import get_current_user, get_admin_user, get_sportsman_or_admin
+from app.api.deps import get_current_user, get_admin_user, get_sport_jumper_or_admin
 from app.core.database import get_db
 from app.crud.manifests import manifest as manifest_crud
 from app.crud.loads import jump as jump_crud
@@ -9,7 +9,7 @@ from app.schemas.manifests import (
     ManifestResponse, ManifestCreate, ManifestUpdate, 
     ManifestApproval, ManifestDecline
 )
-from app.models.base import User, ManifestStatus
+from app.models.base import User, ManifestStatus, UserRole
 
 router = APIRouter()
 
@@ -29,7 +29,7 @@ def get_my_manifests(
 def create_manifest(
     manifest_data: ManifestCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_sportsman_or_admin)
+    current_user: User = Depends(get_sport_jumper_or_admin)
 ):
     """Create a new manifest"""
     return manifest_crud.create_with_equipment(
@@ -55,7 +55,8 @@ def get_manifest(
         )
     
     # Users can only see their own manifests unless they're admin
-    if manifest.user_id != current_user.id and not current_user.is_admin:
+    user_roles = [role_assignment.role for role_assignment in current_user.roles]
+    if manifest.user_id != current_user.id and UserRole.ADMINISTRATOR not in user_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions"
@@ -80,13 +81,14 @@ def update_manifest(
         )
     
     # Users can only update their own pending manifests
-    if manifest.user_id != current_user.id and not current_user.is_admin:
+    user_roles = [role_assignment.role for role_assignment in current_user.roles]
+    if manifest.user_id != current_user.id and UserRole.ADMINISTRATOR not in user_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions"
         )
     
-    if manifest.status != ManifestStatus.PENDING and not current_user.is_admin:
+    if manifest.status != ManifestStatus.PENDING and UserRole.ADMINISTRATOR not in user_roles:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Can only update pending manifests"
@@ -115,13 +117,14 @@ def delete_manifest(
         )
     
     # Users can only delete their own pending manifests
-    if manifest.user_id != current_user.id and not current_user.is_admin:
+    user_roles = [role_assignment.role for role_assignment in current_user.roles]
+    if manifest.user_id != current_user.id and UserRole.ADMINISTRATOR not in user_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions"
         )
     
-    if manifest.status != ManifestStatus.PENDING and not current_user.is_admin:
+    if manifest.status != ManifestStatus.PENDING and UserRole.ADMINISTRATOR not in user_roles:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Can only delete pending manifests"

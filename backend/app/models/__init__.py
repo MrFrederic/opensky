@@ -1,6 +1,6 @@
 # Models module
 from app.core.database import Base
-from .base import User, Dictionary, DictionaryValue, UserStatus, ManifestStatus, TandemBookingStatus
+from .base import User, UserRole, UserRoleAssignment, Dictionary, DictionaryValue, ManifestStatus, TandemBookingStatus
 from .equipment import Equipment
 from .manifests import Manifest
 from .loads import Load, Jump
@@ -10,6 +10,8 @@ from .auth import RefreshToken
 __all__ = [
     "Base",
     "User",
+    "UserRole",
+    "UserRoleAssignment",
     "Dictionary", 
     "DictionaryValue",
     "Equipment",
@@ -18,7 +20,6 @@ __all__ = [
     "Jump", 
     "TandemSlot",
     "TandemBooking",
-    "UserStatus",
     "ManifestStatus", 
     "TandemBookingStatus",
     "RefreshToken"

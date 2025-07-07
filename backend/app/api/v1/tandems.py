@@ -9,7 +9,7 @@ from app.schemas.tandems import (
     TandemSlotResponse, TandemSlotCreate, TandemSlotUpdate, TandemSlotAvailability,
     TandemBookingResponse, TandemBookingCreate, TandemBookingUpdate
 )
-from app.models.base import User
+from app.models.base import User, UserRole
 
 router = APIRouter()
 
@@ -119,7 +119,8 @@ def update_tandem_booking(
         )
     
     # Users can only update their own bookings
-    if booking.user_id != current_user.id and not current_user.is_admin:
+    user_roles = [role_assignment.role for role_assignment in current_user.roles]
+    if booking.user_id != current_user.id and UserRole.ADMINISTRATOR not in user_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions"
@@ -156,7 +157,8 @@ def cancel_tandem_booking(
         )
     
     # Users can only cancel their own bookings
-    if booking.user_id != current_user.id and not current_user.is_admin:
+    user_roles = [role_assignment.role for role_assignment in current_user.roles]
+    if booking.user_id != current_user.id and UserRole.ADMINISTRATOR not in user_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions"
