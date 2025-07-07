@@ -1,5 +1,6 @@
 import { api } from '@/lib/api';
 import { AuthTokens, User } from '@/types';
+import { useAuthStore } from '@/stores/auth';
 
 export interface TelegramAuthData {
   id: number;
@@ -11,10 +12,34 @@ export interface TelegramAuthData {
   hash: string;
 }
 
+export interface RefreshResponse {
+  access_token: string;
+  token_type: string;
+}
+
 export const authService = {
+  // Get Telegram bot username
+  getTelegramBotUsername: async (): Promise<{ username: string }> => {
+    const response = await api.get('/auth/telegram-auth/bot');
+    return { username: response.data.username.replace('@', '') };
+  },
+
   // Authenticate with Telegram
-  authenticateWithTelegram: async (telegramData: TelegramAuthData): Promise<{ user: User; tokens: AuthTokens }> => {
+  authenticateWithTelegram: async (telegramData: TelegramAuthData): Promise<AuthTokens> => {
     const response = await api.post('/auth/telegram-auth', telegramData);
+    return response.data;
+  },
+
+  // Refresh authentication token
+  refreshToken: async (): Promise<AuthTokens> => {
+    const response = await api.post('/auth/refresh');
+    
+    // Update the auth store with the new token
+    const store = useAuthStore.getState();
+    if (store.user) {
+      store.setTokens(response.data);
+    }
+    
     return response.data;
   },
 
@@ -33,6 +58,28 @@ export const authService = {
   // Request sportsman status
   requestSportsmanStatus: async (): Promise<{ message: string }> => {
     const response = await api.post('/users/me/request-sportsman-status');
+    return response.data;
+  },
+
+  // Logout (clears refresh token cookie)
+  logout: async (): Promise<{ detail: string }> => {
+    const response = await api.post('/auth/logout');
+    
+    // Clear the auth store
+    const store = useAuthStore.getState();
+    store.logout();
+    
+    return response.data;
+  },
+
+  // Logout from all devices
+  logoutAllDevices: async (): Promise<{ detail: string }> => {
+    const response = await api.post('/auth/logout-all');
+    
+    // Clear the auth store
+    const store = useAuthStore.getState();
+    store.logout();
+    
     return response.data;
   },
 };

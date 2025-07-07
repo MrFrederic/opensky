@@ -1,9 +1,26 @@
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth';
+import { authService } from '@/services/auth';
 import { formatUserName } from '@/lib/utils';
+import { useUser } from '@/hooks/useUser';
 
 const Header: React.FC = () => {
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
+  const { user, isLoading } = useUser();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Even if the API call fails, clear local state and redirect
+      useAuthStore.getState().logout();
+      navigate('/login');
+    }
+  };
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -11,35 +28,35 @@ const Header: React.FC = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <h1 className="text-xl font-bold text-gray-900">
+            <Link to="/" className="text-xl font-bold text-gray-900">
               Dropzone Management
-            </h1>
+            </Link>
           </div>
 
           {/* Navigation */}
           <nav className="hidden md:flex space-x-8">
-            <a href="/" className="text-gray-500 hover:text-gray-900">
+            <Link to="/" className="text-gray-500 hover:text-gray-900">
               Home
-            </a>
+            </Link>
             {isAuthenticated && (
               <>
-                <a href="/dashboard" className="text-gray-500 hover:text-gray-900">
+                <Link to="/dashboard" className="text-gray-500 hover:text-gray-900">
                   Dashboard
-                </a>
-                <a href="/tandems" className="text-gray-500 hover:text-gray-900">
+                </Link>
+                <Link to="/tandems" className="text-gray-500 hover:text-gray-900">
                   Tandems
-                </a>
+                </Link>
                 {user?.status !== 'newby' && (
                   <>
-                    <a href="/manifest" className="text-gray-500 hover:text-gray-900">
+                    <Link to="/manifest" className="text-gray-500 hover:text-gray-900">
                       Manifest
-                    </a>
-                    <a href="/logbook" className="text-gray-500 hover:text-gray-900">
+                    </Link>
+                    <Link to="/logbook" className="text-gray-500 hover:text-gray-900">
                       Logbook
-                    </a>
-                    <a href="/loads" className="text-gray-500 hover:text-gray-900">
+                    </Link>
+                    <Link to="/loads" className="text-gray-500 hover:text-gray-900">
                       Loads
-                    </a>
+                    </Link>
                   </>
                 )}
               </>
@@ -48,25 +65,34 @@ const Header: React.FC = () => {
 
           {/* User menu */}
           <div className="flex items-center space-x-4">
-            {isAuthenticated && user ? (
+            {isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-700">
-                  {formatUserName(user)}
-                </span>
+                {isLoading ? (
+                  <div className="h-6 w-24 bg-gray-200 animate-pulse rounded"></div>
+                ) : user ? (
+                  <div className="flex items-center space-x-2">
+                    {user.username && (
+                      <span className="text-sm font-medium text-blue-600">@{user.username}</span>
+                    )}
+                    <span className="text-sm text-gray-700">
+                      {formatUserName(user)}
+                    </span>
+                  </div>
+                ) : null}
                 <button
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="text-sm text-gray-500 hover:text-gray-900"
                 >
                   Logout
                 </button>
               </div>
             ) : (
-              <a
-                href="/login"
+              <Link
+                to="/login"
                 className="btn-primary"
               >
                 Login
-              </a>
+              </Link>
             )}
           </div>
         </div>

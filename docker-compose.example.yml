@@ -35,11 +35,10 @@ services:
       DATABASE_URL: postgresql://user:pass@postgres:5432/dropzone_db
       SECRET_KEY: your-secret-key-change-in-production
       ENVIRONMENT: development
-      TELEGRAM_BOT_TOKEN: 7320649396:AAHlT6WpmwoPtZcvJSj5zBFoY9UiBFp0qo8
+      TELEGRAM_BOT_TOKEN: YOUR_TELEGRAM_BOT_TOKEN_HERE
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
       REFRESH_TOKEN_EXPIRE_DAYS: 7
       ALGORITHM: HS256
-    # Remove external port exposure - only accessible through frontend proxy
     expose:
       - "8000"
     depends_on:

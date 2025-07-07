@@ -1,7 +1,14 @@
 # Build stage
 FROM node:18-alpine as build
 
+# Define build arguments
+ARG API_HOST
+
 WORKDIR /app
+
+# Set environment variables for build
+ENV API_HOST=$API_HOST
+ENV VITE_API_HOST=$API_HOST
 
 # Copy package files
 COPY package*.json ./

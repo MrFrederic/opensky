@@ -25,15 +25,16 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    telegram_id: str = payload.get("sub")
-    if telegram_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    # Try to get user by user_id first (more efficient) or telegram_id as fallback
+    user = None
+    user_id: Optional[int] = payload.get("user_id")
+    telegram_id: Optional[str] = payload.get("sub")
     
-    user = user_crud.get_by_telegram_id(db, telegram_id=telegram_id)
+    if user_id:
+        user = user_crud.get(db, id=user_id)
+    elif telegram_id:
+        user = user_crud.get_by_telegram_id(db, telegram_id=telegram_id)
+    
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

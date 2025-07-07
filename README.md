@@ -46,15 +46,26 @@ A modern, full-stack web application for managing dropzone (parachute center) op
    cd dropzone-management
    ```
 
-2. **Start all services**
+2. **Setup configuration**
+   ```bash
+   # Copy the example docker-compose file
+   cp docker-compose.example.yml docker-compose.yml
+   
+   # Edit docker-compose.yml to add your configuration
+   # - Replace YOUR_TELEGRAM_BOT_TOKEN_HERE with your actual bot token
+   # - Update SECRET_KEY with a secure random string
+   # - Modify database credentials if needed
+   ```
+
+3. **Start all services**
    ```bash
    docker-compose up --build
    ```
 
-3. **Access the applications**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
-   - API Documentation: http://localhost:8000/docs
+4. **Access the applications**
+   - Frontend: http://localhost
+   - Backend API: http://localhost:8000 (proxied through frontend)
+   - API Documentation: http://localhost/api/docs (proxied)
    - PgAdmin: http://localhost:5050 (admin@admin.com / admin)
 
 ### Local Development
@@ -73,11 +84,9 @@ docker run -d --name postgres \
   -e POSTGRES_DB=dropzone_db \
   -p 5432:5432 postgres:15
 
-# Run migrations
-alembic upgrade head
-
-# Start development server
-./start-dev.sh
+# Run migrations and start server manually
+cd backend
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 #### Frontend Setup

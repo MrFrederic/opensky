@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth';
 import { UserStatus } from '@/types';
 
@@ -26,9 +27,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           <p className="text-gray-600 mb-6">
             Please log in to access this page.
           </p>
-          <button className="btn-primary">
+          <Link to="/login" className="btn-primary">
             Log In
-          </button>
+          </Link>
         </div>
       </div>
     );

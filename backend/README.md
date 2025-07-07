@@ -43,29 +43,29 @@ The backend service now includes **automatic database initialization**:
 
 ### Local Development
 
-1. Install dependencies:
+1. **Using Docker Compose (Recommended):**
+   ```bash
+   # From the project root directory
+   docker-compose up -d
+   ```
+   
+   This will automatically:
+   - Start PostgreSQL database
+   - Build and start the backend service
+   - Handle all environment variables
+   - Initialize the database
+   - Set up all dependencies
+
+2. **For local development without Docker:**
    ```bash
    cd backend
    pip install -r requirements.txt
-   ```
-
-2. Set up environment variables:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your database credentials
-   ```
-
-3. **Database Setup Options:**
-
-   **Option A: Automatic (with Docker)**
-   ```bash
-   # Start PostgreSQL
-   docker-compose up postgres
    
-   # Run manual initialization
-   python manual_init.py
+   # Set environment variables manually
+   export DATABASE_URL="postgresql://user:pass@localhost:5432/dropzone_db"
+   export SECRET_KEY="your-secret-key-here"
+   # ... other environment variables
    
-   # Start the application
    uvicorn app.main:app --reload
    ```
 
@@ -93,23 +93,25 @@ When using `docker-compose up`, the backend service will:
 - Create tables if needed
 - Initialize basic data
 
-### 2. Manual Initialization (Development)
-For local development, use the manual initialization script:
+### 2. Manual Setup (Local Development Only)
+For local development without Docker, you'll need to set up the database manually:
 ```bash
-python manual_init.py
-```
+# Ensure PostgreSQL is running and database exists
+# Set environment variables
+export DATABASE_URL="postgresql://user:pass@localhost:5432/dropzone_db"
+export SECRET_KEY="your-secret-key-here"
+# ... other variables from docker-compose.yml
 
-This script will:
-- Check database connectivity
-- Create all necessary tables
-- Set up Alembic migrations
+# Run Alembic migrations
+alembic upgrade head
+
+# Start the application
+uvicorn app.main:app --reload
+```
 - Initialize basic application data
 
-### 3. Development Data Reset
-To reset and reinitialize the database:
-```bash
-python init_dev_db.py
-```
+### 3. Database Initialization
+Database initialization is handled automatically by the Docker containers using the `startup.py` script. For local development without Docker, you'll need to set up the database manually using Alembic migrations.
 
 ## Project Structure
 
@@ -137,7 +139,8 @@ backend/
 ├── alembic/               # Database migrations
 ├── requirements.txt       # Python dependencies
 ├── Dockerfile            # Docker configuration
-└── .env.example          # Environment variables template
+├── entrypoint.sh         # Container startup script
+└── startup.py            # Database initialization script
 ```
 
 ## API Documentation
@@ -254,6 +257,3 @@ For production, ensure:
 
 - `entrypoint.sh` - Docker container startup script
 - `startup.py` - Automatic database initialization for containers
-- `manual_init.py` - Manual database setup for development
-- `init_dev_db.py` - Development data initialization
-- `start-dev.sh` - Development startup helper

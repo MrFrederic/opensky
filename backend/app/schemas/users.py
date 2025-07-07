@@ -52,12 +52,22 @@ class UserSummary(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    # Don't include refresh token here, it will be set in a cookie
 
+
+class TokenData(BaseModel):
+    telegram_id: Optional[str] = None
+    user_id: Optional[int] = None
+
+
+class RefreshTokenRequest(BaseModel):
+    client_info: Optional[str] = None  # For tracking devices/browsers
 
 class TelegramAuthData(BaseModel):
     id: int
     first_name: str
     last_name: Optional[str] = None
     username: Optional[str] = None
+    photo_url: Optional[str] = None
     auth_date: int
     hash: str

@@ -12,6 +12,7 @@ interface AuthState {
 interface AuthActions {
   setAuth: (user: User, tokens: AuthTokens) => void;
   setUser: (user: User) => void;
+  setTokens: (tokens: AuthTokens) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
 }
@@ -38,6 +39,13 @@ export const useAuthStore = create<AuthStore>()(
 
       setUser: (user: User) =>
         set({ user }),
+
+      setTokens: (tokens: AuthTokens) =>
+        set({ 
+          token: tokens.access_token,
+          isAuthenticated: true,
+          isLoading: false,
+        }),
 
       logout: () =>
         set({

@@ -62,6 +62,28 @@ def run_migrations():
                 print(f"❌ Failed to create initial migration: {result.stderr}")
                 return False
             print("✅ Initial migration created")
+        else:
+            # Check if we need new migrations by comparing models with current database
+            print("🔍 Checking if new migrations are needed...")
+            check_result = subprocess.run(
+                ["alembic", "revision", "--autogenerate", "-m", "Auto-generated migration", "--dry-run"],
+                capture_output=True,
+                text=True
+            )
+            
+            # If there are changes detected, create a new migration
+            if "Detected" in check_result.stdout and ("added table" in check_result.stdout or "added column" in check_result.stdout):
+                print("📝 Database schema changes detected, creating new migration...")
+                result = subprocess.run(
+                    ["alembic", "revision", "--autogenerate", "-m", "Auto-generated migration"],
+                    capture_output=True,
+                    text=True
+                )
+                
+                if result.returncode != 0:
+                    print(f"❌ Failed to create migration: {result.stderr}")
+                    return False
+                print("✅ New migration created")
         
         # Run migrations
         result = subprocess.run(

@@ -40,7 +40,8 @@ backend/
 ├── alembic/               # Database migration management
 ├── requirements.txt       # Python dependencies
 ├── Dockerfile            # Container definition
-├── start-dev.sh          # Development startup script
+├── entrypoint.sh         # Container startup script
+├── startup.py            # Database initialization
 └── README.md             # Detailed documentation
 ```
 
@@ -56,9 +57,11 @@ docker-compose up --build
 ```bash
 cd backend
 pip install -r requirements.txt
-cp .env.example .env
-# Edit .env with your database settings
-./start-dev.sh
+# Set environment variables manually (see docker-compose.yml for reference)
+export DATABASE_URL="postgresql://user:pass@localhost:5432/dropzone_db"
+export SECRET_KEY="your-secret-key-here"
+# ... other variables
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## 📚 API Documentation

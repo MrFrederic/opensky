@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta
-from typing import Optional, Union
+from typing import Optional, Union, Dict, Any
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from app.core.config import settings
+import secrets
+import hashlib
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -18,6 +20,17 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
+
+
+def create_refresh_token(user_id: int, expires_delta: Optional[timedelta] = None) -> tuple[str, str]:
+    """Create a secure random refresh token"""
+    # Generate a cryptographically secure random token
+    token = secrets.token_hex(32)  # 64 characters hexadecimal string
+    
+    # Hash the token to store in database (we'll verify by hashing and comparing)
+    hashed_token = hashlib.sha256(token.encode()).hexdigest()
+    
+    return token, hashed_token
 
 
 def verify_token(token: str) -> Optional[dict]:

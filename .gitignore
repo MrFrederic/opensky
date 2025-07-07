@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/
 lib64/
 parts/
 sdist/
@@ -243,6 +243,10 @@ dist
 # Docker volumes
 postgres_data/
 pgadmin_data/
+
+# Docker Compose files
+.docker-compose.yml
+docker-compose.yml
 
 # IDE files
 .idea/

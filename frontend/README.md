@@ -100,6 +100,29 @@ The frontend is configured to run in Docker with nginx for production builds:
 
 ```bash
 # Build and run with docker-compose
+docker-compose up -d frontend
+```
+
+## Environment Variables
+
+The frontend uses environment variables to configure API connections:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VITE_API_HOST` | Base URL for backend API | Empty (uses relative paths) |
+| `API_HOST` | Used in docker build for configuring API proxy | `http://backend:8000` |
+
+### Docker Compose (Recommended)
+
+Environment variables are automatically handled by Docker Compose. For local development without Docker, you can set:
+
+```bash
+# For local development only
+export VITE_API_HOST=http://localhost:8000
+```
+
+```bash
+# Build and run with docker-compose
 docker-compose up frontend
 
 # Access the application
@@ -138,10 +161,15 @@ The application uses Tailwind CSS with:
 
 ## Environment Variables
 
-Create a `.env` file for local development:
+Environment variables are handled automatically by Docker Compose. The main variables are:
+
+- `VITE_API_HOST` - Backend API URL (set by Docker Compose)
+- `API_HOST` - Used in Docker build for nginx proxy configuration
+
+For local development without Docker, you can manually set:
 
 ```bash
-VITE_API_URL=http://localhost:8000/api/v1
+export VITE_API_HOST=http://localhost:8000
 ```
 
 ## Deployment
