@@ -1,11 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Box,
+  Typography,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Paper,
+  InputAdornment,
+  Alert,
+  Container,
+  Chip,
+  Avatar
+} from '@mui/material';
+import { 
+  Search, 
+  FilterList as Filter, 
+  ArrowBack as ArrowLeft, 
+  Storage as Database 
+} from '@mui/icons-material';
 import { AdminOnly } from '@/components/auth/RoleGuard';
 import { dictionariesService } from '@/services/dictionaries';
 import DictionaryValueTable from '@/components/admin/DictionaryValueTable';
 import { useToast } from '@/hooks/useToast';
-import { Search, Filter, ArrowLeft, Database } from 'lucide-react';
 
 const DictionaryEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -73,11 +93,6 @@ const DictionaryEdit: React.FC = () => {
     },
   });
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Search is handled by filtering
-  };
-
   const handleClearSearch = () => {
     setSearchQuery('');
   };
@@ -119,152 +134,173 @@ const DictionaryEdit: React.FC = () => {
   // Handle invalid dictionary ID
   if (!dictionaryId || isNaN(dictionaryId)) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Invalid Dictionary</h1>
-          <p className="text-gray-600 mb-4">The dictionary ID provided is not valid.</p>
-          <Link 
-            to="/admin/dictionaries" 
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dictionaries
-          </Link>
-        </div>
-      </div>
+      <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Invalid Dictionary
+        </Typography>
+        <Typography variant="body1" color="text.secondary" paragraph>
+          The dictionary ID provided is not valid.
+        </Typography>
+        <Box component={Link} to="/admin/dictionaries" sx={{ 
+          display: 'inline-flex', 
+          alignItems: 'center', 
+          px: 2, 
+          py: 1, 
+          bgcolor: 'primary.main', 
+          color: 'primary.contrastText', 
+          borderRadius: 1, 
+          textDecoration: 'none',
+          '&:hover': { bgcolor: 'primary.dark' }
+        }}>
+          <ArrowLeft sx={{ mr: 1 }} />
+          Back to Dictionaries
+        </Box>
+      </Container>
     );
   }
 
   return (
     <AdminOnly fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You need administrator privileges to access this page.</p>
-        </div>
-      </div>
+      <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Access Denied
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          You need administrator privileges to access this page.
+        </Typography>
+      </Container>
     }>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <Container maxWidth="xl" sx={{ py: 4 }}>
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <Link 
-              to="/admin/dictionaries" 
-              className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+        <Box mb={4}>
+          <Box display="flex" alignItems="center" gap={2} mb={2}>
+            <Box component={Link} to="/admin/dictionaries" sx={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              color: 'text.secondary',
+              textDecoration: 'none',
+              '&:hover': { color: 'text.primary' }
+            }}>
+              <ArrowLeft sx={{ mr: 1 }} />
               Back to Dictionaries
-            </Link>
-          </div>
+            </Box>
+          </Box>
           
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0">
-              <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${
-                dictionary?.is_active ? 'bg-blue-100' : 'bg-gray-100'
-              }`}>
-                <Database className={`h-6 w-6 ${dictionary?.is_active ? 'text-blue-600' : 'text-gray-400'}`} />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+          <Box display="flex" alignItems="center" gap={3}>
+            <Avatar sx={{ 
+              width: 48, 
+              height: 48,
+              bgcolor: dictionary?.is_active ? 'primary.light' : 'grey.300',
+              color: dictionary?.is_active ? 'primary.main' : 'grey.500'
+            }}>
+              <Database />
+            </Avatar>
+            <Box>
+              <Typography variant="h3" component="h1">
                 {isLoading ? 'Loading...' : dictionary?.name || 'Unknown Dictionary'}
-              </h1>
-              <div className="mt-2 flex items-center gap-4">
-                <p className="text-gray-600">
+              </Typography>
+              <Box display="flex" alignItems="center" gap={2} mt={1}>
+                <Typography variant="body1" color="text.secondary">
                   Manage values for this dictionary
-                </p>
+                </Typography>
                 {dictionary && (
-                  <div className="flex gap-2">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      dictionary.is_active 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {dictionary.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      dictionary.is_system 
-                        ? 'bg-gray-100 text-gray-800' 
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {dictionary.is_system ? 'System' : 'Custom'}
-                    </span>
-                  </div>
+                  <Box display="flex" gap={1}>
+                    <Chip
+                      label={dictionary.is_active ? 'Active' : 'Inactive'}
+                      color={dictionary.is_active ? 'success' : 'error'}
+                      size="small"
+                    />
+                    <Chip
+                      label={dictionary.is_system ? 'System' : 'Custom'}
+                      color={dictionary.is_system ? 'default' : 'primary'}
+                      size="small"
+                    />
+                  </Box>
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
+              </Box>
+            </Box>
+          </Box>
+        </Box>
 
         {/* Search and Filter */}
-        <div className="mb-6 bg-white p-4 rounded-lg shadow">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search Form */}
-            <form onSubmit={handleSearch} className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search values..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={handleClearSearch}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            </form>
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2}>
+            {/* Search */}
+            <TextField
+              fullWidth
+              placeholder="Search values..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                ),
+                endAdornment: searchQuery && (
+                  <InputAdornment position="end">
+                    <Box
+                      component="button"
+                      onClick={handleClearSearch}
+                      sx={{ 
+                        border: 'none', 
+                        background: 'none', 
+                        cursor: 'pointer',
+                        fontSize: '1.2rem',
+                        p: 0.5
+                      }}
+                    >
+                      ×
+                    </Box>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ flexGrow: 1 }}
+            />
 
             {/* Status Filter */}
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-400" />
-              <select
+            <FormControl sx={{ minWidth: 150 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
                 value={statusFilter}
+                label="Status"
                 onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                startAdornment={<Filter sx={{ mr: 1, color: 'action.disabled' }} />}
               >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
+                <MenuItem value="all">All Status</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="inactive">Inactive</MenuItem>
+              </Select>
+            </FormControl>
 
             {/* Type Filter */}
-            <div className="flex items-center gap-2">
-              <select
+            <FormControl sx={{ minWidth: 120 }}>
+              <InputLabel>Type</InputLabel>
+              <Select
                 value={typeFilter}
+                label="Type"
                 onChange={(e) => setTypeFilter(e.target.value as 'all' | 'system' | 'custom')}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">All Types</option>
-                <option value="system">System</option>
-                <option value="custom">Custom</option>
-              </select>
-            </div>
-          </div>
+                <MenuItem value="all">All Types</MenuItem>
+                <MenuItem value="system">System</MenuItem>
+                <MenuItem value="custom">Custom</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
 
           {searchQuery && (
-            <div className="mt-2 text-sm text-gray-500">
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
               {searchQuery.length < 2 ? 'Enter at least 2 characters to search' : 
                `Searching for "${searchQuery}"`}
-            </div>
+            </Typography>
           )}
-        </div>
+        </Paper>
 
         {/* Error State */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
-            <div className="text-red-800">
-              Error loading dictionary: {error instanceof Error ? error.message : 'Unknown error'}
-            </div>
-          </div>
+          <Alert severity="error" sx={{ mb: 3 }}>
+            Error loading dictionary: {error instanceof Error ? error.message : 'Unknown error'}
+          </Alert>
         )}
 
         {/* Values Table */}
@@ -278,13 +314,15 @@ const DictionaryEdit: React.FC = () => {
 
         {/* Results Info */}
         {dictionary?.values && dictionary.values.length > 0 && (
-          <div className="mt-4 text-sm text-gray-500 text-center">
-            Showing {filteredValues.length} of {dictionary.values.length} value{dictionary.values.length !== 1 ? 's' : ''}
-            {statusFilter !== 'all' && ` (${statusFilter})`}
-            {typeFilter !== 'all' && ` (${typeFilter})`}
-          </div>
+          <Box textAlign="center" mt={2}>
+            <Typography variant="body2" color="text.secondary">
+              Showing {filteredValues.length} of {dictionary.values.length} value{dictionary.values.length !== 1 ? 's' : ''}
+              {statusFilter !== 'all' && ` (${statusFilter})`}
+              {typeFilter !== 'all' && ` (${typeFilter})`}
+            </Typography>
+          </Box>
         )}
-      </div>
+      </Container>
     </AdminOnly>
   );
 };

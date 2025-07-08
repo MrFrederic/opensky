@@ -83,9 +83,14 @@ def telegram_auth(
             first_name=auth_data.first_name,
             last_name=auth_data.last_name or "",
             username=auth_data.username,
+            photo_url=auth_data.photo_url,  # Include Telegram photo URL
             roles=[UserRole.TANDEM_JUMPER]  # Default role for new users
         )
         user = user_crud.create(db, obj_in=user_create)
+    else:
+        # For existing users, check if they have no avatar and Telegram provides one
+        if not user.avatar_url and auth_data.photo_url:
+            user = user_crud.update_avatar_from_telegram(db=db, user=user, photo_url=auth_data.photo_url)
     
     # Create access token with short lifespan
     access_token = create_access_token(data={"sub": user.telegram_id, "user_id": user.id})

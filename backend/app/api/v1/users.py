@@ -1,13 +1,17 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_admin_user
 from app.core.database import get_db
 from app.crud.users import user as user_crud
 from app.schemas.users import UserResponse, UserUpdate, UserSummary, UserRoleUpdate, UserCreate
 from app.models.base import User, UserRole
+from app.core.storage import file_storage
 
 router = APIRouter()
+
+# Allowed image types for avatar uploads
+IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"]
 
 
 @router.get("/me", response_model=UserResponse)
@@ -62,6 +66,41 @@ def request_sport_license(
     )
     
     return {"message": "Sport license submitted. Waiting for admin approval for role upgrade."}
+
+
+@router.post("/me/avatar", response_model=UserResponse)
+def upload_user_avatar(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload user avatar image"""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided")
+    
+    # Check file size (10MB limit for avatars)
+    if file.size and file.size > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 10MB")
+
+    try:
+        # Upload to avatars folder
+        file_url = file_storage.upload_file(
+            file=file,
+            folder="avatars",
+            allowed_types=IMAGE_TYPES
+        )
+        
+        # Update user's avatar URL
+        updated_user = user_crud.update_avatar(
+            db=db,
+            user=current_user,
+            avatar_url=file_url
+        )
+        
+        return updated_user
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Admin endpoints
@@ -247,3 +286,35 @@ def delete_user(
     
     user_crud.remove(db, id=user_id)
     return {"message": "User deleted successfully"}
+
+
+@router.post("/{user_id}/avatar", response_model=UserResponse)
+def admin_upload_user_avatar(
+    user_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_admin_user)
+):
+    """Admin: Upload avatar for any user by ID"""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided")
+    # Check file size (10MB limit for avatars)
+    if file.size and file.size > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 10MB")
+    user = user_crud.get(db, id=user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        file_url = file_storage.upload_file(
+            file=file,
+            folder="avatars",
+            allowed_types=IMAGE_TYPES
+        )
+        updated_user = user_crud.update_avatar(
+            db=db,
+            user=user,
+            avatar_url=file_url
+        )
+        return updated_user
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

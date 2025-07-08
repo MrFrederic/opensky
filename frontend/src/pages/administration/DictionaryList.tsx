@@ -1,10 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Box,
+  Typography,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Paper,
+  InputAdornment,
+  Alert,
+  Container
+} from '@mui/material';
+import { 
+  Search, 
+  FilterList as Filter 
+} from '@mui/icons-material';
 import { AdminOnly } from '@/components/auth/RoleGuard';
 import { dictionariesService } from '@/services/dictionaries';
 import DictionaryTable from '@/components/admin/DictionaryTable';
 import { useToast } from '@/hooks/useToast';
-import { Search, Filter } from 'lucide-react';
 
 const DictionaryList: React.FC = () => {
   const queryClient = useQueryClient();
@@ -73,11 +89,6 @@ const DictionaryList: React.FC = () => {
     },
   });
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Search is now handled automatically by the query key change
-  };
-
   const handleClearSearch = () => {
     setSearchQuery('');
   };
@@ -88,93 +99,105 @@ const DictionaryList: React.FC = () => {
 
   return (
     <AdminOnly fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You need administrator privileges to access this page.</p>
-        </div>
-      </div>
+      <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Access Denied
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          You need administrator privileges to access this page.
+        </Typography>
+      </Container>
     }>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <Container maxWidth="xl" sx={{ py: 4 }}>
         {/* Header */}
-        <div className="mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dictionary Management</h1>
-            <p className="mt-2 text-gray-600">
-              Manage system dictionaries and their values
-            </p>
-          </div>
-        </div>
+        <Box mb={4}>
+          <Typography variant="h3" component="h1" gutterBottom>
+            Dictionary Management
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Manage system dictionaries and their values
+          </Typography>
+        </Box>
 
         {/* Search and Filter */}
-        <div className="mb-6 bg-white p-4 rounded-lg shadow">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search Form */}
-            <form onSubmit={handleSearch} className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search dictionaries by name..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={handleClearSearch}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            </form>
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2}>
+            {/* Search */}
+            <TextField
+              fullWidth
+              placeholder="Search dictionaries by name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                ),
+                endAdornment: searchQuery && (
+                  <InputAdornment position="end">
+                    <Box
+                      component="button"
+                      onClick={handleClearSearch}
+                      sx={{ 
+                        border: 'none', 
+                        background: 'none', 
+                        cursor: 'pointer',
+                        fontSize: '1.2rem',
+                        p: 0.5
+                      }}
+                    >
+                      ×
+                    </Box>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ flexGrow: 1 }}
+            />
 
             {/* Status Filter */}
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-400" />
-              <select
+            <FormControl sx={{ minWidth: 150 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
                 value={statusFilter}
+                label="Status"
                 onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                startAdornment={<Filter sx={{ mr: 1, color: 'action.disabled' }} />}
               >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
+                <MenuItem value="all">All Status</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="inactive">Inactive</MenuItem>
+              </Select>
+            </FormControl>
 
             {/* Type Filter */}
-            <div className="flex items-center gap-2">
-              <select
+            <FormControl sx={{ minWidth: 120 }}>
+              <InputLabel>Type</InputLabel>
+              <Select
                 value={typeFilter}
+                label="Type"
                 onChange={(e) => setTypeFilter(e.target.value as 'all' | 'system' | 'custom')}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">All Types</option>
-                <option value="system">System</option>
-                <option value="custom">Custom</option>
-              </select>
-            </div>
-          </div>
+                <MenuItem value="all">All Types</MenuItem>
+                <MenuItem value="system">System</MenuItem>
+                <MenuItem value="custom">Custom</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
 
           {searchQuery && (
-            <div className="mt-2 text-sm text-gray-500">
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
               {searchQuery.length < 2 ? 'Enter at least 2 characters to search' : 
                `Searching for "${searchQuery}"`}
-            </div>
+            </Typography>
           )}
-        </div>
+        </Paper>
 
         {/* Error State */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
-            <div className="text-red-800">
-              Error loading dictionaries: {error instanceof Error ? error.message : 'Unknown error'}
-            </div>
-          </div>
+          <Alert severity="error" sx={{ mb: 3 }}>
+            Error loading dictionaries: {error instanceof Error ? error.message : 'Unknown error'}
+          </Alert>
         )}
 
         {/* Dictionaries Table */}
@@ -188,13 +211,15 @@ const DictionaryList: React.FC = () => {
 
         {/* Results Info */}
         {dictionaries && dictionaries.length > 0 && (
-          <div className="mt-4 text-sm text-gray-500 text-center">
-            Showing {dictionaries.length} dictionar{dictionaries.length !== 1 ? 'ies' : 'y'}
-            {statusFilter !== 'all' && ` (${statusFilter})`}
-            {typeFilter !== 'all' && ` (${typeFilter})`}
-          </div>
+          <Box textAlign="center" mt={2}>
+            <Typography variant="body2" color="text.secondary">
+              Showing {dictionaries.length} dictionar{dictionaries.length !== 1 ? 'ies' : 'y'}
+              {statusFilter !== 'all' && ` (${statusFilter})`}
+              {typeFilter !== 'all' && ` (${typeFilter})`}
+            </Typography>
+          </Box>
         )}
-      </div>
+      </Container>
     </AdminOnly>
   );
 };

@@ -1,64 +1,194 @@
-import React from 'react';
+import React, { useState } from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Button,
+  Avatar,
+} from '@mui/material';
+import {
+  People as PeopleIcon,
+  Book as BookIcon,
+  Build as BuildIcon,
+  Login as LoginIcon,
+} from '@mui/icons-material';
+import { useAuthStore } from '@/stores/auth';
+import { useUser } from '@/hooks/useUser';
+import LoginModal from '@/components/auth/LoginModal';
 
 const HomePage: React.FC = () => {
+  const { isAuthenticated } = useAuthStore();
+  const { user } = useUser();
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="py-12">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-8">
-              Dropzone Management System
-            </h1>
-            <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Container maxWidth="lg" sx={{ py: 8 }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h2" component="h1" gutterBottom fontWeight="bold">
+            Dropzone Management System
+          </Typography>
+          
+          {isAuthenticated && user ? (
+            <Typography 
+              variant="h5" 
+              color="text.secondary" 
+              sx={{ mb: 8, maxWidth: '3xl', mx: 'auto' }}
+            >
+              Welcome back, {user.first_name}! Ready for your next jump?
+            </Typography>
+          ) : (
+            <Typography 
+              variant="h5" 
+              color="text.secondary" 
+              sx={{ mb: 8, maxWidth: '3xl', mx: 'auto' }}
+            >
               Welcome to the comprehensive dropzone management system. 
               Manage tandem bookings, sportsman manifests, equipment tracking, 
               and load management all in one place.
-            </p>
+            </Typography>
+          )}
+          
+          <Grid container spacing={4} sx={{ mb: 8 }}>
+            <Grid item xs={12} md={4}>
+              <Card 
+                sx={{ 
+                  p: 3, 
+                  height: '100%',
+                  transition: 'transform 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                  },
+                }}
+              >
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <Avatar 
+                    sx={{ 
+                      bgcolor: 'primary.light', 
+                      mx: 'auto', 
+                      mb: 2,
+                      width: 56,
+                      height: 56,
+                    }}
+                  >
+                    <PeopleIcon />
+                  </Avatar>
+                  <Typography variant="h6" component="h3" gutterBottom fontWeight="semibold">
+                    Tandem Bookings
+                  </Typography>
+                  <Typography color="text.secondary">
+                    Easy online booking system for tandem jumps with calendar integration.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
             
-            <div className="grid md:grid-cols-3 gap-8 mb-12">
-              <div className="card p-6">
-                <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m3 5.197H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Tandem Bookings</h3>
-                <p className="text-gray-600">Easy online booking system for tandem jumps with calendar integration.</p>
-              </div>
-              
-              <div className="card p-6">
-                <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Digital Logbook</h3>
-                <p className="text-gray-600">Keep track of all your jumps with detailed digital logbook functionality.</p>
-              </div>
-              
-              <div className="card p-6">
-                <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Equipment Management</h3>
-                <p className="text-gray-600">Comprehensive equipment tracking and manifest management system.</p>
-              </div>
-            </div>
+            <Grid item xs={12} md={4}>
+              <Card 
+                sx={{ 
+                  p: 3, 
+                  height: '100%',
+                  transition: 'transform 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                  },
+                }}
+              >
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <Avatar 
+                    sx={{ 
+                      bgcolor: 'primary.light', 
+                      mx: 'auto', 
+                      mb: 2,
+                      width: 56,
+                      height: 56,
+                    }}
+                  >
+                    <BookIcon />
+                  </Avatar>
+                  <Typography variant="h6" component="h3" gutterBottom fontWeight="semibold">
+                    Digital Logbook
+                  </Typography>
+                  <Typography color="text.secondary">
+                    Keep track of all your jumps with detailed digital logbook functionality.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
             
-            <div className="space-x-4">
-              <button className="btn-primary">
-                Get Started
-              </button>
-              <button className="btn-secondary">
-                Learn More
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+            <Grid item xs={12} md={4}>
+              <Card 
+                sx={{ 
+                  p: 3, 
+                  height: '100%',
+                  transition: 'transform 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                  },
+                }}
+              >
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <Avatar 
+                    sx={{ 
+                      bgcolor: 'primary.light', 
+                      mx: 'auto', 
+                      mb: 2,
+                      width: 56,
+                      height: 56,
+                    }}
+                  >
+                    <BuildIcon />
+                  </Avatar>
+                  <Typography variant="h6" component="h3" gutterBottom fontWeight="semibold">
+                    Equipment Management
+                  </Typography>
+                  <Typography color="text.secondary">
+                    Comprehensive equipment tracking and manifest management system.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+          
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+            {isAuthenticated ? (
+              <>
+                <Button variant="contained" color="primary" size="large">
+                  Dashboard
+                </Button>
+                <Button variant="outlined" color="primary" size="large">
+                  View Manifest
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  size="large"
+                  startIcon={<LoginIcon />}
+                  onClick={() => setLoginModalOpen(true)}
+                >
+                  Login to Get Started
+                </Button>
+                <Button variant="outlined" color="primary" size="large">
+                  Learn More
+                </Button>
+              </>
+            )}
+          </Box>
+        </Box>
+      </Container>
+      
+      {/* Login Modal */}
+      <LoginModal 
+        open={loginModalOpen} 
+        onClose={() => setLoginModalOpen(false)} 
+      />
+    </Box>
   );
 };
 

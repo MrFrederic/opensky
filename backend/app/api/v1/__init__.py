@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import auth, users, tandems, manifests, loads, equipment, dictionaries
+from app.api.v1 import auth, users, tandems, manifests, loads, equipment, dictionaries, files
 
 api_router = APIRouter()
 
@@ -11,3 +11,4 @@ api_router.include_router(manifests.router, prefix="/manifests", tags=["manifest
 api_router.include_router(loads.router, prefix="", tags=["loads"])  # loads and jumps
 api_router.include_router(equipment.router, prefix="/equipment", tags=["equipment"])
 api_router.include_router(dictionaries.router, prefix="/dictionaries", tags=["dictionaries"])
+api_router.include_router(files.router, prefix="/files", tags=["files"])

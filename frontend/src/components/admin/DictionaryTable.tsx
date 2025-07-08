@@ -1,7 +1,32 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Avatar,
+  Typography,
+  IconButton,
+  Skeleton,
+  Box,
+  Chip,
+  TextField,
+  Button
+} from '@mui/material';
+import { 
+  Check, 
+  Close as X, 
+  Edit as Pencil, 
+  Delete as Trash2, 
+  Refresh as RotateCcw, 
+  Add as Plus, 
+  Settings 
+} from '@mui/icons-material';
 import { Dictionary } from '@/types';
-import { Check, X, Pencil, Trash2, RotateCcw, Plus, Settings } from 'lucide-react';
 
 interface DictionaryTableProps {
   dictionaries: Dictionary[];
@@ -87,211 +112,272 @@ const DictionaryTable: React.FC<DictionaryTableProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="px-6 py-3">
-                <div className="flex space-x-4">
-                  <div className="h-4 bg-gray-200 rounded animate-pulse flex-1"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-32"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-32"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-8"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <Paper elevation={2}>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell><Skeleton width={100} /></TableCell>
+                <TableCell><Skeleton width={80} /></TableCell>
+                <TableCell><Skeleton width={80} /></TableCell>
+                <TableCell><Skeleton width={100} /></TableCell>
+                <TableCell><Skeleton width={100} /></TableCell>
+                <TableCell><Skeleton width={100} /></TableCell>
+                <TableCell width={120}></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {[...Array(5)].map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Box display="flex" alignItems="center" gap={2}>
+                      <Skeleton variant="circular" width={40} height={40} />
+                      <Box>
+                        <Skeleton width={120} />
+                        <Skeleton width={60} />
+                      </Box>
+                    </Box>
+                  </TableCell>
+                  <TableCell><Skeleton width={60} /></TableCell>
+                  <TableCell><Skeleton width={60} /></TableCell>
+                  <TableCell><Skeleton width={80} /></TableCell>
+                  <TableCell><Skeleton width={80} /></TableCell>
+                  <TableCell><Skeleton width={80} /></TableCell>
+                  <TableCell>
+                    <Box display="flex" gap={1}>
+                      <Skeleton variant="circular" width={32} height={32} />
+                      <Skeleton variant="circular" width={32} height={32} />
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
     );
   }
 
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
+    <Paper elevation={2}>
       {/* Add Dictionary Section */}
       {onAdd && (
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'grey.50' }}>
           {adding ? (
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={addName}
-                  onChange={e => setAddName(e.target.value)}
-                  onKeyDown={handleAddKeyDown}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter dictionary name..."
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-2">
-                <button 
-                  onClick={handleAddSave} 
-                  disabled={saving || !addName.trim()} 
-                  className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  title="Save (Enter)"
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => { setAdding(false); setAddName(''); }} 
-                  className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-gray-400 text-white hover:bg-gray-500 transition-colors"
-                  title="Cancel (Escape)"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+            <Box display="flex" alignItems="center" gap={2}>
+              <TextField
+                fullWidth
+                size="small"
+                value={addName}
+                onChange={e => setAddName(e.target.value)}
+                onKeyDown={handleAddKeyDown}
+                placeholder="Enter dictionary name..."
+                autoFocus
+              />
+              <IconButton 
+                onClick={handleAddSave} 
+                disabled={saving || !addName.trim()} 
+                color="success"
+                title="Save (Enter)"
+              >
+                <Check />
+              </IconButton>
+              <IconButton 
+                onClick={() => { setAdding(false); setAddName(''); }} 
+                color="default"
+                title="Cancel (Escape)"
+              >
+                <X />
+              </IconButton>
+            </Box>
           ) : (
-            <button 
+            <Button 
               onClick={() => setAdding(true)} 
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm font-medium"
+              variant="contained"
+              startIcon={<Plus />}
             >
-              <Plus className="w-4 h-4 mr-2" /> 
               Add New Dictionary
-            </button>
+            </Button>
           )}
-        </div>
+        </Box>
       )}
       
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Values</th>
-              <th className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {/* Dictionary Rows */}
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>
+                <Typography variant="subtitle2" fontWeight="medium">
+                  Name
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="subtitle2" fontWeight="medium">
+                  Status
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="subtitle2" fontWeight="medium">
+                  Type
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="subtitle2" fontWeight="medium">
+                  Created
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="subtitle2" fontWeight="medium">
+                  Updated
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="subtitle2" fontWeight="medium">
+                  Values
+                </Typography>
+              </TableCell>
+              <TableCell width={120}>
+                <Typography variant="subtitle2" fontWeight="medium">
+                  Actions
+                </Typography>
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
             {dictionaries.map((dictionary) => (
-              <tr key={dictionary.id} className={!dictionary.is_active ? 'opacity-50 bg-gray-50' : ''}>
-                <td className="px-6 py-4 whitespace-nowrap">
+              <TableRow 
+                key={dictionary.id}
+                sx={{ 
+                  opacity: dictionary.is_active ? 1 : 0.5,
+                  bgcolor: dictionary.is_active ? 'inherit' : 'grey.50'
+                }}
+              >
+                <TableCell>
                   {editingId === dictionary.id ? (
-                    <input
-                      type="text"
+                    <TextField
+                      size="small"
                       value={editName}
                       onChange={e => setEditName(e.target.value)}
                       onKeyDown={(e) => handleEditKeyDown(e, dictionary.id)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       autoFocus
                     />
                   ) : (
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                          dictionary.is_active ? 'bg-blue-100' : 'bg-gray-100'
-                        }`}>
-                          <svg className={`h-5 w-5 ${dictionary.is_active ? 'text-blue-600' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className={`text-sm font-medium ${dictionary.is_active ? 'text-gray-900' : 'text-gray-500'}`}>
+                    <Box display="flex" alignItems="center" gap={2}>
+                      <Avatar sx={{ 
+                        width: 40, 
+                        height: 40,
+                        bgcolor: dictionary.is_active ? 'primary.light' : 'grey.300'
+                      }}>
+                        <Settings color={dictionary.is_active ? 'primary' : 'disabled'} />
+                      </Avatar>
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium" 
+                          color={dictionary.is_active ? 'text.primary' : 'text.secondary'}>
                           {dictionary.name}
-                        </div>
-                        <div className="text-sm text-gray-500">
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
                           ID: {dictionary.id}
-                        </div>
-                      </div>
-                    </div>
+                        </Typography>
+                      </Box>
+                    </Box>
                   )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    dictionary.is_active 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {dictionary.is_active ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    dictionary.is_system 
-                      ? 'bg-gray-100 text-gray-800' 
-                      : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {dictionary.is_system ? 'System' : 'Custom'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatDate(dictionary.created_at)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatDate(dictionary.updated_at)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Link
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={dictionary.is_active ? 'Active' : 'Inactive'}
+                    color={dictionary.is_active ? 'success' : 'error'}
+                    size="small"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={dictionary.is_system ? 'System' : 'Custom'}
+                    color={dictionary.is_system ? 'default' : 'primary'}
+                    size="small"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2">
+                    {formatDate(dictionary.created_at)}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2">
+                    {formatDate(dictionary.updated_at)}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    component={Link}
                     to={`/admin/dictionaries/${dictionary.id}`}
-                    className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm"
+                    size="small"
+                    variant="outlined"
+                    startIcon={<Settings />}
                   >
-                    <Settings className="w-4 h-4 mr-1" />
                     Edit Values
-                  </Link>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex gap-2 justify-end">
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Box display="flex" gap={1}>
                     {editingId === dictionary.id ? (
                       <>
-                        <button 
+                        <IconButton 
                           onClick={() => handleEditSave(dictionary.id)} 
                           disabled={saving || !editName.trim()} 
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          color="success"
+                          size="small"
                           title="Save (Enter)"
                         >
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button 
+                          <Check />
+                        </IconButton>
+                        <IconButton 
                           onClick={handleEditCancel} 
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-400 text-white hover:bg-gray-500 transition-colors"
+                          color="default"
+                          size="small"
                           title="Cancel (Escape)"
                         >
-                          <X className="w-4 h-4" />
-                        </button>
+                          <X />
+                        </IconButton>
                       </>
                     ) : (
                       <>
-                        <button 
+                        <IconButton 
                           onClick={() => handleEdit(dictionary.id, dictionary.name)} 
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                          color="primary"
+                          size="small"
                           title="Edit"
                         >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteRestore(dictionary.id, dictionary.is_active)}
-                          disabled={deletingId === dictionary.id}
-                          className={`inline-flex items-center justify-center w-8 h-8 rounded-md text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                            dictionary.is_active 
-                              ? 'bg-red-600 hover:bg-red-700' 
-                              : 'bg-green-600 hover:bg-green-700'
-                          }`}
-                          title={dictionary.is_active ? 'Delete' : 'Restore'}
-                        >
-                          {dictionary.is_active ? <Trash2 className="w-4 h-4" /> : <RotateCcw className="w-4 h-4" />}
-                        </button>
+                          <Pencil />
+                        </IconButton>
+                        {!dictionary.is_system && (
+                          <IconButton
+                            onClick={() => handleDeleteRestore(dictionary.id, dictionary.is_active)}
+                            disabled={deletingId === dictionary.id}
+                            color={dictionary.is_active ? 'error' : 'success'}
+                            size="small"
+                            title={dictionary.is_active ? 'Delete' : 'Restore'}
+                          >
+                            {dictionary.is_active ? <Trash2 /> : <RotateCcw />}
+                          </IconButton>
+                        )}
                       </>
                     )}
-                  </div>
-                </td>
-              </tr>
+                  </Box>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {dictionaries.length === 0 && (
+        <Box textAlign="center" py={6}>
+          <Typography variant="body1" color="text.secondary">
+            No dictionaries found
+          </Typography>
+        </Box>
+      )}
+    </Paper>
   );
 };
 

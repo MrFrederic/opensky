@@ -16,6 +16,8 @@ export interface CreateUserData {
   phone?: string;
   telegram_id: string;
   roles?: UserRole[];
+  // Note: photo_url is deliberately not included here
+  // The backend handles avatar/photo_url differently through a dedicated upload endpoint
 }
 
 export const usersService = {
@@ -52,5 +54,30 @@ export const usersService = {
   // Delete user
   deleteUser: async (userId: number): Promise<void> => {
     await api.delete(`/users/${userId}`);
-  }
+  },
+
+  // Upload avatar for current user
+  uploadAvatar: async (file: File): Promise<User> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await api.post('/users/me/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Upload avatar for any user (admin)
+  uploadAvatarForUser: async (userId: number, file: File): Promise<User> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post(`/users/${userId}/avatar`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };

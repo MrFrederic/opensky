@@ -1,6 +1,31 @@
 import React, { useState } from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Avatar,
+  Typography,
+  IconButton,
+  Skeleton,
+  Box,
+  Chip,
+  TextField,
+  Button
+} from '@mui/material';
+import { 
+  Check, 
+  Close as X, 
+  Edit as Pencil, 
+  Delete as Trash2, 
+  Refresh as RotateCcw, 
+  Add as Plus,
+  LocalOffer
+} from '@mui/icons-material';
 import { DictionaryValue } from '@/types';
-import { Check, X, Pencil, Trash2, RotateCcw, Plus } from 'lucide-react';
 
 interface DictionaryValueTableProps {
   values: DictionaryValue[];
@@ -86,225 +111,268 @@ const DictionaryValueTable: React.FC<DictionaryValueTableProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="px-6 py-3">
-                <div className="flex space-x-4">
-                  <div className="h-4 bg-gray-200 rounded animate-pulse flex-1"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-32"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-32"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-8"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <Paper elevation={2}>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell><Skeleton width={100} /></TableCell>
+                <TableCell><Skeleton width={80} /></TableCell>
+                <TableCell><Skeleton width={80} /></TableCell>
+                <TableCell><Skeleton width={100} /></TableCell>
+                <TableCell><Skeleton width={100} /></TableCell>
+                <TableCell width={120}></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {[...Array(5)].map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Box display="flex" alignItems="center" gap={2}>
+                      <Skeleton variant="circular" width={40} height={40} />
+                      <Box>
+                        <Skeleton width={120} />
+                        <Skeleton width={60} />
+                      </Box>
+                    </Box>
+                  </TableCell>
+                  <TableCell><Skeleton width={60} /></TableCell>
+                  <TableCell><Skeleton width={60} /></TableCell>
+                  <TableCell><Skeleton width={80} /></TableCell>
+                  <TableCell><Skeleton width={80} /></TableCell>
+                  <TableCell>
+                    <Box display="flex" gap={1}>
+                      <Skeleton variant="circular" width={32} height={32} />
+                      <Skeleton variant="circular" width={32} height={32} />
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
     );
   }
 
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
+    <Paper elevation={2}>
       {/* Add Value Section */}
       {onAdd && (
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'grey.50' }}>
           {adding ? (
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={addValue}
-                  onChange={e => setAddValue(e.target.value)}
-                  onKeyDown={handleAddKeyDown}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter value..."
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-2">
-                <button 
-                  onClick={handleAddSave} 
-                  disabled={saving || !addValue.trim()} 
-                  className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  title="Save (Enter)"
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => { setAdding(false); setAddValue(''); }} 
-                  className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-gray-400 text-white hover:bg-gray-500 transition-colors"
-                  title="Cancel (Escape)"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+            <Box display="flex" alignItems="center" gap={2}>
+              <TextField
+                fullWidth
+                size="small"
+                value={addValue}
+                onChange={e => setAddValue(e.target.value)}
+                onKeyDown={handleAddKeyDown}
+                placeholder="Enter value..."
+                autoFocus
+              />
+              <IconButton 
+                onClick={handleAddSave} 
+                disabled={saving || !addValue.trim()} 
+                color="success"
+                title="Save (Enter)"
+              >
+                <Check />
+              </IconButton>
+              <IconButton 
+                onClick={() => { setAdding(false); setAddValue(''); }} 
+                color="default"
+                title="Cancel (Escape)"
+              >
+                <X />
+              </IconButton>
+            </Box>
           ) : (
-            <button 
+            <Button 
               onClick={() => setAdding(true)} 
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm font-medium"
+              variant="contained"
+              startIcon={<Plus />}
             >
-              <Plus className="w-4 h-4 mr-2" /> 
               Add New Value
-            </button>
+            </Button>
           )}
-        </div>
+        </Box>
       )}
       
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated</th>
-              <th className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {/* Value Rows */}
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>
+                <Typography variant="subtitle2" fontWeight="medium">
+                  Value
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="subtitle2" fontWeight="medium">
+                  Status
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="subtitle2" fontWeight="medium">
+                  Type
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="subtitle2" fontWeight="medium">
+                  Created
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="subtitle2" fontWeight="medium">
+                  Updated
+                </Typography>
+              </TableCell>
+              <TableCell width={120}>
+                <Typography variant="subtitle2" fontWeight="medium">
+                  Actions
+                </Typography>
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
             {values.map((value) => (
-              <tr key={value.id} className={!value.is_active ? 'opacity-50 bg-gray-50' : ''}>
-                <td className="px-6 py-4 whitespace-nowrap">
+              <TableRow 
+                key={value.id}
+                sx={{ 
+                  opacity: value.is_active ? 1 : 0.5,
+                  bgcolor: value.is_active ? 'inherit' : 'grey.50'
+                }}
+              >
+                <TableCell>
                   {editingId === value.id ? (
-                    <input
-                      type="text"
+                    <TextField
+                      size="small"
                       value={editValue}
                       onChange={e => setEditValue(e.target.value)}
                       onKeyDown={(e) => handleEditKeyDown(e, value.id)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       autoFocus
                     />
                   ) : (
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                          value.is_active ? 'bg-green-100' : 'bg-gray-100'
-                        }`}>
-                          <svg className={`h-5 w-5 ${value.is_active ? 'text-green-600' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                          </svg>
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className={`text-sm font-medium ${value.is_active ? 'text-gray-900' : 'text-gray-500'}`}>
+                    <Box display="flex" alignItems="center" gap={2}>
+                      <Avatar sx={{ 
+                        width: 40, 
+                        height: 40,
+                        bgcolor: value.is_active ? 'success.light' : 'grey.300'
+                      }}>
+                        <LocalOffer color={value.is_active ? 'success' : 'disabled'} />
+                      </Avatar>
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium" 
+                          color={value.is_active ? 'text.primary' : 'text.secondary'}>
                           {value.value}
-                        </div>
-                        <div className="text-sm text-gray-500">
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
                           ID: {value.id}
-                        </div>
-                      </div>
-                    </div>
+                        </Typography>
+                      </Box>
+                    </Box>
                   )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    value.is_active 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {value.is_active ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    value.is_system 
-                      ? 'bg-gray-100 text-gray-800' 
-                      : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {value.is_system ? 'System' : 'Custom'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatDate(value.created_at)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatDate(value.updated_at)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex gap-2 justify-end">
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={value.is_active ? 'Active' : 'Inactive'}
+                    color={value.is_active ? 'success' : 'error'}
+                    size="small"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={value.is_system ? 'System' : 'Custom'}
+                    color={value.is_system ? 'default' : 'primary'}
+                    size="small"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2">
+                    {formatDate(value.created_at)}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2">
+                    {formatDate(value.updated_at)}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Box display="flex" gap={1}>
                     {editingId === value.id ? (
                       <>
-                        <button 
+                        <IconButton 
                           onClick={() => handleEditSave(value.id)} 
                           disabled={saving || !editValue.trim()} 
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          color="success"
+                          size="small"
                           title="Save (Enter)"
                         >
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button 
+                          <Check />
+                        </IconButton>
+                        <IconButton 
                           onClick={handleEditCancel} 
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-400 text-white hover:bg-gray-500 transition-colors"
+                          color="default"
+                          size="small"
                           title="Cancel (Escape)"
                         >
-                          <X className="w-4 h-4" />
-                        </button>
+                          <X />
+                        </IconButton>
                       </>
                     ) : (
                       <>
-                        <button 
+                        <IconButton 
                           onClick={() => handleEdit(value.id, value.value)} 
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                          color="primary"
+                          size="small"
                           title="Edit"
                         >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteRestore(value.id, value.is_active)}
-                          disabled={deletingId === value.id}
-                          className={`inline-flex items-center justify-center w-8 h-8 rounded-md text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                            value.is_active 
-                              ? 'bg-red-600 hover:bg-red-700' 
-                              : 'bg-green-600 hover:bg-green-700'
-                          }`}
-                          title={value.is_active ? 'Delete' : 'Restore'}
-                        >
-                          {value.is_active ? <Trash2 className="w-4 h-4" /> : <RotateCcw className="w-4 h-4" />}
-                        </button>
+                          <Pencil />
+                        </IconButton>
+                        {!value.is_system && (
+                          <IconButton
+                            onClick={() => handleDeleteRestore(value.id, value.is_active)}
+                            disabled={deletingId === value.id}
+                            color={value.is_active ? 'error' : 'success'}
+                            size="small"
+                            title={value.is_active ? 'Delete' : 'Restore'}
+                          >
+                            {value.is_active ? <Trash2 /> : <RotateCcw />}
+                          </IconButton>
+                        )}
                       </>
                     )}
-                  </div>
-                </td>
-              </tr>
+                  </Box>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </TableContainer>
 
       {/* Empty State */}
       {values.length === 0 && !loading && (
-        <div className="px-6 py-8 text-center">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No values</h3>
-          <p className="mt-1 text-sm text-gray-500">
+        <Box textAlign="center" py={8}>
+          <LocalOffer sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+          <Typography variant="h6" color="text.primary" gutterBottom>
+            No values
+          </Typography>
+          <Typography variant="body2" color="text.secondary" paragraph>
             This dictionary doesn't have any values yet.
-          </p>
+          </Typography>
           {onAdd && (
-            <div className="mt-6">
-              <button
-                onClick={() => setAdding(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add first value
-              </button>
-            </div>
+            <Button
+              onClick={() => setAdding(true)}
+              variant="contained"
+              startIcon={<Plus />}
+            >
+              Add first value
+            </Button>
           )}
-        </div>
+        </Box>
       )}
-    </div>
+    </Paper>
   );
 };
 

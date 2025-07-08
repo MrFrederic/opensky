@@ -4,6 +4,9 @@ from sqlalchemy import or_, and_
 from app.crud.base import CRUDBase
 from app.models.base import User, UserRole, UserRoleAssignment
 from app.schemas.users import UserCreate, UserUpdate
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
@@ -46,12 +49,12 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         return query.offset(skip).limit(limit).all()
 
     def create(self, db: Session, *, obj_in: UserCreate, created_by: Optional[int] = None) -> User:
-        """Create a new user with default tandem_jumper role"""
+        """Create a new user with default tandem_jumper role and save Telegram photo if provided"""
         # Extract roles from input or use default
         roles = obj_in.roles if obj_in.roles else [UserRole.TANDEM_JUMPER]
         
-        # Create user without roles first
-        obj_in_data = obj_in.model_dump(exclude={'roles'})
+        # Create user without roles first - exclude roles and photo_url
+        obj_in_data = obj_in.model_dump(exclude={'roles', 'photo_url'})
         if created_by is not None:
             obj_in_data['created_by'] = created_by
         
@@ -60,7 +63,15 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         for field in nullable_fields:
             if field in obj_in_data and obj_in_data[field] == '':
                 obj_in_data[field] = None
-            
+        
+        # Handle Telegram photo_url if present
+        photo_url = getattr(obj_in, 'photo_url', None)
+        avatar_url = None
+        if photo_url:
+            avatar_url = self._download_and_upload_telegram_photo(photo_url)
+        if avatar_url:
+            obj_in_data['avatar_url'] = avatar_url
+        
         db_obj = User(**obj_in_data)
         db.add(db_obj)
         db.flush()  # Flush to get the user ID
@@ -156,6 +167,63 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         db.commit()
         db.refresh(user)
         return user
+
+    def update_avatar(self, db: Session, *, user: User, avatar_url: str) -> User:
+        """Update user's avatar URL"""
+        user.avatar_url = avatar_url
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+
+    def update_avatar_from_telegram(self, db: Session, *, user: User, photo_url: str) -> Optional[User]:
+        """Update user's avatar from Telegram photo URL if they don't have one"""
+        if user.avatar_url:  # User already has an avatar
+            return user
+            
+        avatar_url = self._download_and_upload_telegram_photo(photo_url)
+        if avatar_url:
+            return self.update_avatar(db=db, user=user, avatar_url=avatar_url)
+        return user
+
+    def _download_and_upload_telegram_photo(self, photo_url: str) -> Optional[str]:
+        """Helper method to download Telegram photo and upload to MinIO"""
+        try:
+            import requests
+            from fastapi import UploadFile
+            from io import BytesIO
+            from app.core.storage import file_storage
+            
+            resp = requests.get(photo_url)
+            resp.raise_for_status()
+            
+            # Guess extension from content-type
+            content_type = resp.headers.get('Content-Type', 'image/jpeg')
+            ext = '.jpg'
+            if 'png' in content_type:
+                ext = '.png'
+            elif 'webp' in content_type:
+                ext = '.webp'
+                
+            filename = f"telegram_avatar{ext}"
+            file_data = BytesIO(resp.content)
+            file_size = len(resp.content)
+            
+            # Create a mock UploadFile-like object
+            class MockUploadFile:
+                def __init__(self, filename: str, file, content_type: str, size: int):
+                    self.filename = filename
+                    self.file = file
+                    self.content_type = content_type
+                    self.size = size
+            
+            upload_file = MockUploadFile(filename=filename, file=file_data, content_type=content_type, size=file_size)
+            avatar_url = file_storage.upload_file(upload_file, folder="avatars", allowed_types=["image/jpeg", "image/png", "image/webp"])
+            return avatar_url
+            
+        except Exception as e:
+            logger.warning(f"Failed to fetch/upload Telegram photo: {e}")
+            return None
 
 
 user = CRUDUser(User)

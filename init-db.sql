@@ -5,7 +5,11 @@ CREATE TABLE IF NOT EXISTS dictionaries (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
     is_system BOOLEAN DEFAULT false,
-    is_active BOOLEAN DEFAULT true
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ NULL,
+    created_by INTEGER NULL REFERENCES users(id),
+    updated_by INTEGER NULL REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS dictionary_values (
@@ -13,7 +17,11 @@ CREATE TABLE IF NOT EXISTS dictionary_values (
     dictionary_id INTEGER NOT NULL REFERENCES dictionaries(id) ON DELETE CASCADE,
     value VARCHAR(255) NOT NULL,
     is_system BOOLEAN DEFAULT false,
-    is_active BOOLEAN DEFAULT true
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ NULL,
+    created_by INTEGER NULL REFERENCES users(id),
+    updated_by INTEGER NULL REFERENCES users(id)
 );
 
 -- Create dictionaries

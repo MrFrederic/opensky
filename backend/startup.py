@@ -146,6 +146,77 @@ def initialize_data():
         return True
 
 
+def initialize_minio():
+    """Initialize MinIO bucket and set up file storage"""
+    print("🗄️  Initializing MinIO file storage...")
+    
+    try:
+        from minio import Minio
+        from minio.error import S3Error
+        
+        # Create MinIO client
+        client = Minio(
+            endpoint=settings.minio_endpoint,
+            access_key=settings.minio_access_key,
+            secret_key=settings.minio_secret_key,
+            secure=settings.minio_secure
+        )
+        
+        # Wait for MinIO to be available
+        max_retries = 30
+        for attempt in range(max_retries):
+            try:
+                # Test connection by listing buckets
+                client.list_buckets()
+                print("✅ MinIO connection established")
+                break
+            except Exception as e:
+                print(f"⏳ MinIO not ready (attempt {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                else:
+                    print("❌ Failed to connect to MinIO after maximum retries")
+                    return False
+        
+        # Create bucket if it doesn't exist
+        bucket_name = settings.minio_bucket_name
+        if not client.bucket_exists(bucket_name):
+            client.make_bucket(bucket_name)
+            print(f"✅ Created MinIO bucket: {bucket_name}")
+        else:
+            print(f"✅ MinIO bucket already exists: {bucket_name}")
+        
+        # Set bucket policy to allow public read access for files
+        # This allows direct access to uploaded files through the nginx proxy
+        policy = f'''{{
+            "Version": "2012-10-17",
+            "Statement": [
+                {{
+                    "Effect": "Allow",
+                    "Principal": {{"AWS": ["*"]}},
+                    "Action": ["s3:GetObject"],
+                    "Resource": ["arn:aws:s3:::{bucket_name}/*"]
+                }}
+            ]
+        }}'''
+        
+        try:
+            client.set_bucket_policy(bucket_name, policy)
+            print("✅ Set bucket policy for public read access")
+        except S3Error as e:
+            print(f"⚠️  Could not set bucket policy: {e}")
+            print("   Files will still work but may require authentication")
+        
+        return True
+        
+    except ImportError:
+        print("❌ MinIO library not installed. Install with: pip install minio")
+        return False
+    except Exception as e:
+        print(f"❌ MinIO initialization failed: {e}")
+        return False
+
+
 def main():
     """Main startup function"""
     print("🚀 Starting Dropzone Management System Backend")
@@ -166,8 +237,16 @@ def main():
             print("❌ Failed to create tables. Exiting.")
             sys.exit(1)
     
-    # Step 4: Initialize basic data
+    # Step 4: Initialize MinIO storage
+    minio_success = initialize_minio()
+    if not minio_success:
+        print("⚠️  MinIO initialization failed, file uploads may not work properly")
+    
+    # Step 5: Initialize basic data
     initialize_data()
+    
+    # Step 5: Initialize MinIO
+    minio_success = initialize_minio()
     
     print("✅ Database startup completed successfully!")
     print("=" * 50)

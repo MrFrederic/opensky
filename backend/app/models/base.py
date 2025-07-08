@@ -37,6 +37,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=True)
     phone = Column(String, nullable=True)
     license_document_url = Column(Text, nullable=True)
+    avatar_url = Column(Text, nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

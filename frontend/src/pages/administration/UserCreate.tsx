@@ -1,24 +1,43 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import {
+  Box,
+  Typography,
+  Button,
+  Paper,
+  Container,
+  Alert,
+  IconButton,
+} from '@mui/material';
+import { 
+  ArrowBack as ArrowLeft, 
+  PersonAdd as UserPlus, 
+  Save as SaveIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
+
+import { useToast } from '@/hooks/useToast';
 import { AdminOnly } from '@/components/auth/RoleGuard';
-import { usersService, CreateUserData } from '@/services/users';
+import { usersService } from '@/services/users';
 import { UserRole } from '@/types';
-import { ArrowLeft, UserPlus, Mail, Phone, Hash, Shield, AlertCircle } from 'lucide-react';
+import UserForm, { UserFormData } from '@/components/admin/UserForm';
+import { validateUserForm, processFieldValue } from '@/utils/userManagement';
 
 const UserCreate: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   // Form state
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<UserFormData>({
     first_name: '',
     last_name: '',
     username: '',
     email: '',
     phone: '',
-    telegram_id: '',
+    telegram_id: '', // Required for new users
+    license_document_url: '',
   });
 
   const [selectedRoles, setSelectedRoles] = useState<UserRole[]>([UserRole.TANDEM_JUMPER]);
@@ -26,58 +45,31 @@ const UserCreate: React.FC = () => {
 
   // Create user mutation
   const createUserMutation = useMutation({
-    mutationFn: (userData: CreateUserData) => {
-      // Note: This endpoint may not exist yet in the backend
-      // Users are typically created automatically via Telegram authentication
-      return usersService.createUser(userData);
-    },
-    onSuccess: (newUser) => {
+    mutationFn: (data: { 
+      first_name: string;
+      last_name: string;
+      username?: string;
+      email?: string;
+      phone?: string;
+      telegram_id: string;
+      roles: UserRole[];
+      // Note: photo_url is intentionally omitted as it's causing backend errors
+      // The backend will handle Telegram avatar separately if needed
+    }) => usersService.createUser(data),
+    onSuccess: (user) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('User created successfully');
-      navigate(`/admin/users/${newUser.id}`);
+      navigate(`/admin/users/${user.id}`);
     },
-    onError: (error: any) => {
-      console.error('Error creating user:', error);
-      // Handle validation errors from backend
-      if (error.response?.data?.detail) {
-        setErrors({ general: error.response.data.detail });
-        toast.error(`Failed to create user: ${error.response.data.detail}`);
-      } else {
-        toast.error(`Failed to create user: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
+    onError: (error) => {
+      toast.error(`Failed to create user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     },
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    let processedValue = value;
-    
-    // Apply masks based on field type
-    if (name === 'username') {
-      // Username mask: @xxx (display with @, store without)
-      if (value.startsWith('@')) {
-        processedValue = value.slice(1); // Remove @ for storage
-      } else {
-        processedValue = value; // Keep as is if user types without @
-      }
-    } else if (name === 'email') {
-      // Email mask: xxx@xxx.xxx (store with mask)
-      processedValue = value;
-    } else if (name === 'phone') {
-      // Phone mask: +0000000 (store with mask)
-      if (!value.startsWith('+') && value.length > 0) {
-        processedValue = '+' + value.replace(/\D/g, ''); // Add + and keep only digits
-      } else {
-        processedValue = value.replace(/[^\d+]/g, ''); // Keep only digits and +
-      }
-    }
-    
+    const processedValue = processFieldValue(name, value);
     setFormData(prev => ({ ...prev, [name]: processedValue }));
-    
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
   };
 
   const handleRoleToggle = (role: UserRole) => {
@@ -88,306 +80,120 @@ const UserCreate: React.FC = () => {
     );
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.first_name.trim()) {
-      newErrors.first_name = 'First name is required';
-    }
-
-    if (!formData.last_name.trim()) {
-      newErrors.last_name = 'Last name is required';
-    }
-
-    if (!formData.telegram_id.trim()) {
-      newErrors.telegram_id = 'Telegram ID is required';
-    } else if (!/^\d+$/.test(formData.telegram_id)) {
-      newErrors.telegram_id = 'Telegram ID must be numeric';
-    }
-
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    if (selectedRoles.length === 0) {
-      newErrors.roles = 'At least one role must be selected';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async () => {
+    // Validate form
+    const validationErrors = validateUserForm(formData, selectedRoles);
     
-    if (!validateForm()) {
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
-
-    // Prepare data for saving - username should be sent without @ prefix
-    const userData: CreateUserData = {
-      ...formData,
-      username: formData.username, // Username already processed to remove @ in handleInputChange
-      roles: selectedRoles,
-    };
+    
+    // Clear errors
+    setErrors({});
 
     try {
+      // Transform formData to API format - note that the backend expects telegram_id to be a string
+      // Explicitly defining only the fields we want to send to avoid any unwanted fields
+      const userData = {
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+        username: formData.username || undefined,
+        email: formData.email || undefined,
+        phone: formData.phone || undefined,
+        telegram_id: formData.telegram_id!,
+        roles: selectedRoles,
+      };
+      
       await createUserMutation.mutateAsync(userData);
     } catch (error) {
-      // Error handling is done in onError callback
+      console.error('Error creating user:', error);
     }
   };
 
-  const handleBack = () => {
+  const handleCancel = () => {
     navigate('/admin/users');
-  };
-
-  const roleLabels: Record<UserRole, string> = {
-    [UserRole.TANDEM_JUMPER]: 'Tandem Jumper',
-    [UserRole.AFF_STUDENT]: 'AFF Student',
-    [UserRole.SPORT_PAID]: 'Sport Jumper (Paid)',
-    [UserRole.SPORT_FREE]: 'Sport Jumper (Free)',
-    [UserRole.TANDEM_INSTRUCTOR]: 'Tandem Instructor',
-    [UserRole.AFF_INSTRUCTOR]: 'AFF Instructor',
-    [UserRole.ADMINISTRATOR]: 'Administrator',
   };
 
   return (
     <AdminOnly fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You need administrator privileges to access this page.</p>
-        </div>
-      </div>
+      <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Access Denied
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          You need administrator privileges to access this page.
+        </Typography>
+      </Container>
     }>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <Container maxWidth="lg" sx={{ py: 4 }}>
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <button
-              onClick={handleBack}
-              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to Users
-            </button>
-          </div>
+        <Box mb={4}>
+          <Box display="flex" alignItems="center" gap={2} mb={2}>
+            <IconButton onClick={handleCancel} size="small">
+              <ArrowLeft />
+            </IconButton>
+            <Typography variant="h4" component="h1">
+              Create New User
+            </Typography>
+          </Box>
           
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Create New User</h1>
-            <p className="mt-2 text-gray-600">
-              Add a new user to the dropzone management system
-            </p>
-          </div>
-        </div>
-
-        {/* Notice about automatic user creation */}
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
-          <div className="flex items-start">
-            <AlertCircle className="w-5 h-5 text-blue-400 mr-2 mt-0.5 flex-shrink-0" />
-            <div className="text-blue-800 text-sm">
-              <p className="font-medium mb-1">Manual User Creation</p>
-              <p>
-                Typically, users are created automatically when they authenticate via Telegram. 
-                Use this form only for special cases where manual user creation is required.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* User Creation Form */}
-        <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">User Information</h2>
-          </div>
+          <Typography variant="body1" color="text.secondary">
+            Add a new user to the system with specific roles and permissions
+          </Typography>
+        </Box>
+        
+        {/* Form */}
+        <Paper elevation={2}>
+          <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
+            <Box display="flex" alignItems="center" gap={2}>
+              <UserPlus />
+              <Typography variant="h6" component="h2">
+                User Information
+              </Typography>
+            </Box>
+          </Box>
           
-          <div className="p-6 space-y-6">
-            {/* General Error */}
-            {errors.general && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                <div className="text-red-800">{errors.general}</div>
-              </div>
-            )}
+          <Box sx={{ p: 3 }}>
+            <UserForm
+              formData={formData}
+              selectedRoles={selectedRoles}
+              errors={errors}
+              isEditing={true}
+              canEditRoles={true}
+              onInputChange={handleInputChange}
+              onRoleToggle={handleRoleToggle}
+            />
+          </Box>
+        </Paper>
 
-            {/* Basic Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name *
-                </label>
-                <input
-                  type="text"
-                  id="first_name"
-                  name="first_name"
-                  value={formData.first_name}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.first_name ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  required
-                />
-                {errors.first_name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.first_name}</p>
-                )}
-              </div>
-              
-              <div>
-                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Name *
-                </label>
-                <input
-                  type="text"
-                  id="last_name"
-                  name="last_name"
-                  value={formData.last_name}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.last_name ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  required
-                />
-                {errors.last_name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.last_name}</p>
-                )}
-              </div>
-              
-              <div>
-                <label htmlFor="telegram_id" className="block text-sm font-medium text-gray-700 mb-2">
-                  Telegram ID *
-                </label>
-                <input
-                  type="text"
-                  id="telegram_id"
-                  name="telegram_id"
-                  value={formData.telegram_id}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 123456789"
-                  className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.telegram_id ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  required
-                />
-                {errors.telegram_id && (
-                  <p className="mt-1 text-sm text-red-600">{errors.telegram_id}</p>
-                )}
-                <p className="mt-1 text-sm text-gray-500">
-                  Numeric Telegram user ID (not the username)
-                </p>
-              </div>
-              
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                  <Hash className="w-4 h-4 inline mr-1" />
-                  Username
-                </label>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  value={formData.username ? `@${formData.username}` : ''}
-                  onChange={handleInputChange}
-                  placeholder="@username"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                />
-                <p className="mt-1 text-sm text-gray-500">
-                  Telegram username (stored without @)
-                </p>
-              </div>
-              
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  <Mail className="w-4 h-4 inline mr-1" />
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="user@example.com"
-                  className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                )}
-              </div>
-              
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                  <Phone className="w-4 h-4 inline mr-1" />
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  placeholder="+1234567890"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Roles Selection */}
-            <div className="border-t pt-6">
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-gray-700">
-                  <Shield className="w-4 h-4 inline mr-1" />
-                  User Roles *
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Select one or more roles for this user
-                </p>
-                {errors.roles && (
-                  <p className="mt-1 text-sm text-red-600">{errors.roles}</p>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {Object.values(UserRole).map((role) => (
-                  <label key={role} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedRoles.includes(role)}
-                      onChange={() => handleRoleToggle(role)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">
-                      {roleLabels[role]}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <div className="border-t pt-6">
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createUserMutation.isPending}
-                  className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  {createUserMutation.isPending ? 'Creating User...' : 'Create User'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </form>
-      </div>
+        {/* Action Buttons */}
+        <Box display="flex" justifyContent="flex-end" mt={3} gap={2}>
+          <Button
+            variant="outlined"
+            startIcon={<CloseIcon />}
+            onClick={handleCancel}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<SaveIcon />}
+            onClick={handleSave}
+            disabled={createUserMutation.isPending}
+          >
+            {createUserMutation.isPending ? 'Creating...' : 'Create User'}
+          </Button>
+        </Box>
+        
+        {/* Error Message */}
+        {createUserMutation.error && (
+          <Alert severity="error" sx={{ mt: 3 }}>
+            Error: {createUserMutation.error instanceof Error ? createUserMutation.error.message : 'Unknown error'}
+          </Alert>
+        )}
+      </Container>
     </AdminOnly>
   );
 };

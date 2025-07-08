@@ -17,11 +17,13 @@ class UserBase(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    avatar_url: Optional[str] = None
 
 
 class UserCreate(UserBase):
     telegram_id: str
     roles: Optional[List[UserRole]] = None
+    photo_url: Optional[str] = None  # For Telegram photo URL
 
 
 class UserUpdate(BaseModel):
@@ -31,6 +33,7 @@ class UserUpdate(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     license_document_url: Optional[str] = None
+    avatar_url: Optional[str] = None
 
 
 class UserRoleUpdate(BaseModel):
@@ -55,6 +58,7 @@ class UserSummary(BaseModel):
     first_name: str
     last_name: str
     username: Optional[str] = None
+    avatar_url: Optional[str] = None
     roles: List[UserRole] = []
 
 

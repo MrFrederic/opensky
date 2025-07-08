@@ -1,17 +1,35 @@
 import React from 'react';
+import { Skeleton, Box } from '@mui/material';
 
 interface LoadingSkeletonProps {
-  className?: string;
   lines?: number;
+  height?: number;
+  variant?: 'text' | 'rectangular' | 'circular';
+  width?: string | number;
 }
 
-const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ className = '', lines = 3 }) => {
+const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ 
+  lines = 3, 
+  height = 24, 
+  variant = 'text',
+  width = '100%'
+}) => {
+  if (lines === 1) {
+    return <Skeleton variant={variant} height={height} width={width} />;
+  }
+
   return (
-    <div className={`animate-pulse ${className}`}>
+    <Box>
       {[...Array(lines)].map((_, i) => (
-        <div key={i} className="h-4 bg-gray-200 rounded mb-3 last:mb-0" style={{ width: `${100 - i * 10}%` }}></div>
+        <Skeleton 
+          key={i} 
+          variant={variant} 
+          height={height} 
+          width={`${100 - i * 10}%`} 
+          sx={{ mb: i === lines - 1 ? 0 : 1 }}
+        />
       ))}
-    </div>
+    </Box>
   );
 };
 

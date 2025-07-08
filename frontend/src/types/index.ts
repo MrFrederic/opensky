@@ -24,6 +24,7 @@ export interface User {
   email?: string;
   phone?: string;
   license_document_url?: string;
+  avatar_url?: string;
   roles: UserRoleAssignment[];
   created_at: string;
   updated_at?: string;

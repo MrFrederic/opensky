@@ -71,6 +71,13 @@ def delete_dictionary(
             detail="Dictionary not found"
         )
     
+    # Check if it's a system dictionary before attempting deletion
+    if dictionary.is_system:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot delete system dictionary"
+        )
+    
     deleted = dict_crud.delete_dictionary(db, id=dict_id, updated_by=admin_user.id)
     if not deleted:
         raise HTTPException(
@@ -217,6 +224,13 @@ def delete_dictionary_value(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Dictionary value not found"
+        )
+    
+    # Check if it's a system dictionary value before attempting deletion
+    if value.is_system:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot delete system dictionary value"
         )
     
     deleted = dict_value_crud.delete_dictionary_value(db, id=value_id, updated_by=admin_user.id)

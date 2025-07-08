@@ -60,9 +60,13 @@ class CRUDDictionary(CRUDBase[Dictionary, DictionaryCreate, DictionaryUpdate]):
         return obj
 
     def delete_dictionary(self, db: Session, *, id: int, updated_by: Optional[int] = None) -> Optional[Dictionary]:
-        """Toggle is_active status for a dictionary (soft delete/restore)"""
+        """Toggle is_active status for a dictionary (soft delete/restore), but block deletion if is_system=True"""
         obj = db.query(Dictionary).filter(Dictionary.id == id).first()
         if obj:
+            # Block deletion of system dictionaries
+            if obj.is_system:
+                return None  # Signal that deletion is blocked
+            
             obj.is_active = not obj.is_active  # Toggle the active status
             if updated_by is not None:
                 obj.updated_by = updated_by
@@ -133,9 +137,13 @@ class CRUDDictionaryValue(CRUDBase[DictionaryValue, DictionaryValueCreate, Dicti
         return obj
 
     def delete_dictionary_value(self, db: Session, *, id: int, updated_by: Optional[int] = None) -> Optional[DictionaryValue]:
-        """Toggle is_active status for a dictionary value (soft delete/restore)"""
+        """Toggle is_active status for a dictionary value (soft delete/restore), but block deletion if is_system=True"""
         obj = db.query(DictionaryValue).filter(DictionaryValue.id == id).first()
         if obj:
+            # Block deletion of system dictionary values
+            if obj.is_system:
+                return None  # Signal that deletion is blocked
+            
             obj.is_active = not obj.is_active  # Toggle the active status
             if updated_by is not None:
                 obj.updated_by = updated_by

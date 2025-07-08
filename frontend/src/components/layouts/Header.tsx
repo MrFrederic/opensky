@@ -1,159 +1,190 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Box,
+  Menu,
+  MenuItem,
+  CircularProgress,
+  IconButton,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import {
+  ExpandMore as ExpandMoreIcon,
+  Menu as MenuIcon,
+} from '@mui/icons-material';
 import { useAuthStore } from '@/stores/auth';
 import { authService } from '@/services/auth';
-import { formatUserName } from '@/lib/utils';
 import { useUser } from '@/hooks/useUser';
+import { useToastContext } from '@/components/common/ToastProvider';
 import { RoleGuard, ExcludeNewUsers, AdminOnly } from '@/components/auth/RoleGuard';
+import User from '@/components/common/User';
+import LoginModal from '@/components/auth/LoginModal';
 
 const Header: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
   const { user, isLoading } = useUser();
   const navigate = useNavigate();
-  const [showAdminDropdown, setShowAdminDropdown] = useState(false);
+  const toast = useToastContext();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [adminMenuAnchor, setAdminMenuAnchor] = useState<null | HTMLElement>(null);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
       await authService.logout();
       toast.success('Successfully logged out');
-      navigate('/login');
+      navigate('/');
     } catch (error) {
       console.error('Logout failed:', error);
       toast.error(`Logout failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       // Even if the API call fails, clear local state and redirect
       useAuthStore.getState().logout();
-      navigate('/login');
+      navigate('/');
     }
   };
 
-  return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <div className="flex items-center">
-            <Link to="/" className="text-xl font-bold text-gray-900">
-              Dropzone Management
-            </Link>
-          </div>
+  const handleAdminMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAdminMenuAnchor(event.currentTarget);
+  };
 
-          {/* Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            <Link to="/" className="text-gray-500 hover:text-gray-900">
+  const handleAdminMenuClose = () => {
+    setAdminMenuAnchor(null);
+  };
+
+  return (
+    <AppBar position="static" color="inherit" elevation={1}>
+      <Toolbar>
+        {/* Logo */}
+        <Typography
+          variant="h6"
+          component={Link}
+          to="/"
+          sx={{
+            flexGrow: 0,
+            textDecoration: 'none',
+            color: 'text.primary',
+            fontWeight: 'bold',
+            mr: 4,
+          }}
+        >
+          Dropzone Management
+        </Typography>
+
+        {/* Navigation - Desktop */}
+        {!isMobile && (
+          <Box sx={{ display: 'flex', gap: 2, flexGrow: 1 }}>
+            <Button component={Link} to="/" color="inherit">
               Home
-            </Link>
+            </Button>
             {isAuthenticated && (
               <>
                 <RoleGuard permission="VIEW_DASHBOARD">
-                  <Link to="/dashboard" className="text-gray-500 hover:text-gray-900">
+                  <Button component={Link} to="/dashboard" color="inherit">
                     Dashboard
-                  </Link>
+                  </Button>
                 </RoleGuard>
                 <RoleGuard permission="VIEW_TANDEMS">
-                  <Link to="/tandems" className="text-gray-500 hover:text-gray-900">
+                  <Button component={Link} to="/tandems" color="inherit">
                     Tandems
-                  </Link>
+                  </Button>
                 </RoleGuard>
                 <ExcludeNewUsers>
                   <RoleGuard permission="VIEW_MANIFEST">
-                    <Link to="/manifest" className="text-gray-500 hover:text-gray-900">
+                    <Button component={Link} to="/manifest" color="inherit">
                       Manifest
-                    </Link>
+                    </Button>
                   </RoleGuard>
                   <RoleGuard permission="VIEW_LOGBOOK">
-                    <Link to="/logbook" className="text-gray-500 hover:text-gray-900">
+                    <Button component={Link} to="/logbook" color="inherit">
                       Logbook
-                    </Link>
+                    </Button>
                   </RoleGuard>
                   <RoleGuard permission="VIEW_LOADS">
-                    <Link to="/loads" className="text-gray-500 hover:text-gray-900">
+                    <Button component={Link} to="/loads" color="inherit">
                       Loads
-                    </Link>
+                    </Button>
                   </RoleGuard>
                 </ExcludeNewUsers>
                 
-                {/* Administration Dropdown */}
+                {/* Administration Menu */}
                 <AdminOnly>
-                  <div 
-                    className="relative"
-                    onMouseEnter={() => setShowAdminDropdown(true)}
-                    onMouseLeave={() => setShowAdminDropdown(false)}
+                  <Button
+                    color="inherit"
+                    onClick={handleAdminMenuClick}
+                    endIcon={<ExpandMoreIcon />}
                   >
-                    <button className="text-gray-500 hover:text-gray-900 flex items-center">
-                      Administration
-                      <svg 
-                        className="w-4 h-4 ml-1" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
-                          d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
-                    </button>
-                    
-                    {showAdminDropdown && (
-                      <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                        <Link
-                          to="/admin/users"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        >
-                          Users
-                        </Link>
-                        <Link
-                          to="/admin/dictionaries"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        >
-                          Dictionaries
-                        </Link>
-                      </div>
-                    )}
-                  </div>
+                    Administration
+                  </Button>
+                  <Menu
+                    anchorEl={adminMenuAnchor}
+                    open={Boolean(adminMenuAnchor)}
+                    onClose={handleAdminMenuClose}
+                  >
+                    <MenuItem component={Link} to="/admin/users" onClick={handleAdminMenuClose}>
+                      Users
+                    </MenuItem>
+                    <MenuItem component={Link} to="/admin/dictionaries" onClick={handleAdminMenuClose}>
+                      Dictionaries
+                    </MenuItem>
+                  </Menu>
                 </AdminOnly>
               </>
             )}
-          </nav>
+          </Box>
+        )}
 
-          {/* User menu */}
-          <div className="flex items-center space-x-4">
-            {isAuthenticated ? (
-              <div className="flex items-center space-x-4">
-                {isLoading ? (
-                  <div className="h-6 w-24 bg-gray-200 animate-pulse rounded"></div>
-                ) : user ? (
-                  <div className="flex items-center space-x-2">
-                    {user.username && (
-                      <span className="text-sm font-medium text-blue-600">@{user.username}</span>
-                    )}
-                    <span className="text-sm text-gray-700">
-                      {formatUserName(user)}
-                    </span>
-                  </div>
-                ) : null}
-                <button
-                  onClick={handleLogout}
-                  className="text-sm text-gray-500 hover:text-gray-900"
+        {/* Mobile menu button */}
+        {isMobile && (
+          <Box sx={{ flexGrow: 1 }}>
+            <IconButton color="inherit">
+              <MenuIcon />
+            </IconButton>
+          </Box>
+        )}
+
+        {/* User menu */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {isAuthenticated ? (
+            <>
+              {isLoading ? (
+                <CircularProgress size={24} />
+              ) : user ? (
+                <Box 
+                  component={Link} 
+                  to="/profile" 
+                  sx={{ 
+                    textDecoration: 'none', 
+                    color: 'inherit',
+                    '&:hover': { opacity: 0.8 }
+                  }}
                 >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <Link
-                to="/login"
-                className="btn-primary"
-              >
-                Login
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
-    </header>
+                  <User user={user} size="small" />
+                </Box>
+              ) : null}
+              <Button color="inherit" onClick={handleLogout}>
+                Logout
+              </Button>
+            </>
+          ) : (
+            <Button variant="contained" color="primary" onClick={() => setLoginModalOpen(true)}>
+              Login
+            </Button>
+          )}
+        </Box>
+        
+        {/* Login Modal */}
+        <LoginModal 
+          open={loginModalOpen} 
+          onClose={() => setLoginModalOpen(false)} 
+        />
+      </Toolbar>
+    </AppBar>
   );
 };
 
