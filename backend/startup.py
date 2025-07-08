@@ -14,6 +14,14 @@ from app.core.config import settings
 from app.models import Base
 from app.core.database import SessionLocal, engine
 
+# Import all models to ensure they're available for Alembic autogenerate
+from app.models.base import User, UserRoleAssignment, Dictionary, DictionaryValue
+from app.models.equipment import Equipment
+from app.models.loads import Load, Jump
+from app.models.manifests import Manifest
+from app.models.tandems import TandemBooking, TandemSlot
+from app.models.auth import RefreshToken
+
 
 def wait_for_db(max_retries=30, retry_interval=2):
     """Wait for database to be available"""
@@ -37,20 +45,30 @@ def wait_for_db(max_retries=30, retry_interval=2):
 
 
 def run_migrations():
-    """Run Alembic migrations"""
+    """Run Alembic migrations with improved change detection"""
     print("🔄 Running database migrations...")
     
     try:
+        # Ensure Alembic is properly configured
+        if not os.path.exists("alembic.ini"):
+            print("❌ alembic.ini not found")
+            return False
+            
         # Check if migrations directory exists
         if not os.path.exists("alembic/versions"):
             print("📁 Creating migrations directory...")
             os.makedirs("alembic/versions", exist_ok=True)
         
-        # Check if there are any migration files
-        migration_files = [f for f in os.listdir("alembic/versions") if f.endswith('.py')]
+        # Get current database revision
+        print("🔍 Checking current database revision...")
+        current_rev_result = subprocess.run(
+            ["alembic", "current"],
+            capture_output=True,
+            text=True
+        )
         
-        if not migration_files:
-            print("📝 No migrations found, creating initial migration...")
+        if current_rev_result.returncode != 0:
+            print("📝 Database not initialized, creating initial migration...")
             # Create initial migration
             result = subprocess.run(
                 ["alembic", "revision", "--autogenerate", "-m", "Initial migration"],
@@ -63,29 +81,45 @@ def run_migrations():
                 return False
             print("✅ Initial migration created")
         else:
-            # Check if we need new migrations by comparing models with current database
-            print("🔍 Checking if new migrations are needed...")
-            check_result = subprocess.run(
-                ["alembic", "revision", "--autogenerate", "-m", "Auto-generated migration", "--dry-run"],
+            # Check if we need new migrations by trying to create one
+            print("🔍 Checking for model changes...")
+            temp_migration_result = subprocess.run(
+                ["alembic", "revision", "--autogenerate", "-m", "temp_check", "--splice"],
                 capture_output=True,
                 text=True
             )
             
-            # If there are changes detected, create a new migration
-            if "Detected" in check_result.stdout and ("added table" in check_result.stdout or "added column" in check_result.stdout):
-                print("📝 Database schema changes detected, creating new migration...")
-                result = subprocess.run(
-                    ["alembic", "revision", "--autogenerate", "-m", "Auto-generated migration"],
-                    capture_output=True,
-                    text=True
-                )
-                
-                if result.returncode != 0:
-                    print(f"❌ Failed to create migration: {result.stderr}")
-                    return False
-                print("✅ New migration created")
+            if temp_migration_result.returncode == 0:
+                # Read the generated migration file to see if it has any changes
+                migration_files = [f for f in os.listdir("alembic/versions") if f.startswith("temp_check") or "temp_check" in f]
+                if migration_files:
+                    latest_migration = max(migration_files, key=lambda x: os.path.getctime(os.path.join("alembic/versions", x)))
+                    migration_path = os.path.join("alembic/versions", latest_migration)
+                    
+                    with open(migration_path, 'r') as f:
+                        migration_content = f.read()
+                    
+                    # Check if migration has actual changes (not just empty upgrade/downgrade functions)
+                    if ("op.add_column" in migration_content or 
+                        "op.create_table" in migration_content or 
+                        "op.drop_column" in migration_content or 
+                        "op.drop_table" in migration_content or
+                        "op.alter_column" in migration_content):
+                        
+                        print("📝 Database schema changes detected!")
+                        # Rename the temp migration to a proper name
+                        new_name = migration_path.replace("temp_check", "auto_migration")
+                        os.rename(migration_path, new_name)
+                        print(f"✅ New migration created: {os.path.basename(new_name)}")
+                    else:
+                        print("✅ No schema changes detected")
+                        # Remove the empty migration file
+                        os.remove(migration_path)
+                else:
+                    print("✅ No schema changes detected")
         
-        # Run migrations
+        # Always run migrations to ensure we're up to date
+        print("🔄 Applying migrations...")
         result = subprocess.run(
             ["alembic", "upgrade", "head"],
             capture_output=True,

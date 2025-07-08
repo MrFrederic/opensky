@@ -11,6 +11,14 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from app.core.config import settings
 from app.models import Base
 
+# Import all models to ensure they're available for Alembic autogenerate
+from app.models.base import User, UserRoleAssignment, Dictionary, DictionaryValue
+from app.models.equipment import Equipment
+from app.models.loads import Load, Jump
+from app.models.manifests import Manifest
+from app.models.tandems import TandemBooking, TandemSlot
+from app.models.auth import RefreshToken
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
