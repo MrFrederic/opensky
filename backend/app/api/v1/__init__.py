@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import auth, users, tandems, manifests, loads, equipment, dictionaries, files
+from app.api.v1 import auth, users, dictionaries, files
 
 api_router = APIRouter()
 

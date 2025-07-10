@@ -15,6 +15,8 @@ from app.models import Base
 from app.core.database import SessionLocal, engine
 
 # Import all models to ensure they're available for Alembic autogenerate
+from app.models.users import User, UserRoleAssignment
+from app.models.dictionaries import Dictionary, DictionaryValue
 from app.models.auth import RefreshToken
 
 

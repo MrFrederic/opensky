@@ -14,7 +14,3 @@ class RefreshToken(Base):
     revoked = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     created_ip = Column(String, nullable=True)  # Store IP address for audit
-    
-    # You can add additional fields for security:
-    # user_agent = Column(String, nullable=True)
-    # device_info = Column(String, nullable=True)

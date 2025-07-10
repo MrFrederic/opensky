@@ -61,8 +61,7 @@ api.interceptors.response.use(
       
       // Check if request doesn't need token or if user is not authenticated
       if (!useAuthStore.getState().isAuthenticated || 
-          (originalRequest.url?.endsWith('/auth/telegram-auth') || 
-           originalRequest.url?.endsWith('/auth/telegram-auth/bot'))) {
+          (originalRequest.url?.endsWith('/auth/telegram-auth'))) {
         return Promise.reject(error);
       }
 

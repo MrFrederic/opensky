@@ -84,34 +84,6 @@ const Header: React.FC = () => {
             </Button>
             {isAuthenticated && (
               <>
-                <RoleGuard permission="VIEW_DASHBOARD">
-                  <Button component={Link} to="/dashboard" color="inherit">
-                    Dashboard
-                  </Button>
-                </RoleGuard>
-                <RoleGuard permission="VIEW_TANDEMS">
-                  <Button component={Link} to="/tandems" color="inherit">
-                    Tandems
-                  </Button>
-                </RoleGuard>
-                <ExcludeNewUsers>
-                  <RoleGuard permission="VIEW_MANIFEST">
-                    <Button component={Link} to="/manifest" color="inherit">
-                      Manifest
-                    </Button>
-                  </RoleGuard>
-                  <RoleGuard permission="VIEW_LOGBOOK">
-                    <Button component={Link} to="/logbook" color="inherit">
-                      Logbook
-                    </Button>
-                  </RoleGuard>
-                  <RoleGuard permission="VIEW_LOADS">
-                    <Button component={Link} to="/loads" color="inherit">
-                      Loads
-                    </Button>
-                  </RoleGuard>
-                </ExcludeNewUsers>
-                
                 {/* Administration Menu */}
                 <AdminOnly>
                   <Button

@@ -24,10 +24,6 @@ class User(Base):
     
     # Relationships
     roles = relationship("UserRoleAssignment", foreign_keys="UserRoleAssignment.user_id", back_populates="user", cascade="all, delete-orphan")
-    manifests = relationship("Manifest", foreign_keys="Manifest.user_id", back_populates="user")
-    jumps = relationship("Jump", foreign_keys="Jump.user_id", back_populates="user")
-    tandem_jumps = relationship("Jump", foreign_keys="Jump.passenger_id", back_populates="passenger")
-    tandem_bookings = relationship("TandemBooking", foreign_keys="TandemBooking.user_id", back_populates="user")
 
 
 class UserRoleAssignment(Base):
