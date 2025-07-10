@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import time
 from app.core.config import settings
-from app.schemas.users import TelegramAuthData
+from app.schemas.auth import TelegramAuthData
 
 
 def validate_telegram_auth_data(auth_data: TelegramAuthData) -> bool:

@@ -121,7 +121,7 @@ import { usersService } from '../services/users';
 
 const handleAvatarUpload = async (file: File) => {
   const updatedUser = await usersService.uploadAvatar(file);
-  console.log('Avatar updated:', updatedUser.avatar_url);
+  console.log('Avatar updated:', updatedUser.photo_url);
 };
 ```
 
@@ -134,7 +134,7 @@ import AvatarUpload from '@/components/common/AvatarUpload';
   size={120}
   editable={true}
   onAvatarUpdate={(updatedUser) => {
-    console.log('Avatar uploaded:', updatedUser.avatar_url);
+    console.log('Avatar uploaded:', updatedUser.photo_url);
   }}
 />
 ```
@@ -170,7 +170,7 @@ import AvatarUpload from '@/components/common/AvatarUpload';
 3. If no avatar exists and Telegram provides `photo_url`, the system:
    - Downloads the image from Telegram
    - Uploads it to MinIO bucket
-   - Updates the user's `avatar_url` field
+   - Updates the user's `photo_url` field
    - Continues with normal authentication
 
 ## File URL Format
@@ -220,7 +220,7 @@ To store file URLs in your database models:
 # In your SQLAlchemy model
 class User(Base):
     # ...existing fields...
-    avatar_url: Optional[str] = Column(String, nullable=True)
+    photo_url: Optional[str] = Column(String, nullable=True)
     
 class Equipment(Base):
     # ...existing fields...
@@ -239,7 +239,7 @@ async def upload_avatar(
     file_url = file_storage.upload_file(file, folder="avatars", allowed_types=IMAGE_TYPES)
     
     # Update user record
-    updated_user = user_crud.update_avatar(db, user=current_user, avatar_url=file_url)
+    updated_user = user_crud.update_avatar(db, user=current_user, photo_url=file_url)
     
     return updated_user
 ```

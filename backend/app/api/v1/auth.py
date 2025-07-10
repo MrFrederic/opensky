@@ -8,7 +8,8 @@ from app.core.security import create_access_token, verify_token
 from app.core.config import settings
 from app.crud.users import user as user_crud
 from app.crud.auth import refresh_token as refresh_token_crud
-from app.schemas.users import UserCreate, UserResponse, TokenResponse, TelegramAuthData, TokenData
+from app.schemas.users import UserCreate, UserResponse
+from app.schemas.auth import TokenResponse, TelegramAuthData
 from app.models.enums import UserRole
 from app.models.users import User
 from app.api.deps import get_current_user
@@ -51,7 +52,7 @@ def telegram_auth(
         user = user_crud.create(db, obj_in=user_create)
     else:
         # For existing users, check if they have no avatar and Telegram provides one
-        if not user.avatar_url and auth_data.photo_url:
+        if not user.photo_url and auth_data.photo_url:
             user = user_crud.update_avatar_from_telegram(db=db, user=user, photo_url=auth_data.photo_url)
     
     # Create access token with short lifespan

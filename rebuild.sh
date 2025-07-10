@@ -13,12 +13,11 @@ echo "Removed dangling images"
 echo "===== Rebuilding backend service ====="
 docker compose build backend
 echo "Backend rebuild completed!"
+docker compose up -d backend
 
 echo "===== Rebuilding frontend service ====="
 docker compose build frontend
 echo "Frontend rebuild completed!"
-
-echo "===== Starting services ====="
-docker compose up -d backend frontend
+docker compose up -d frontend
 
 echo "===== Services rebuilt and restarted ====="

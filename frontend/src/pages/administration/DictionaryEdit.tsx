@@ -22,7 +22,6 @@ import {
   ArrowBack as ArrowLeft, 
   Storage as Database 
 } from '@mui/icons-material';
-import { AdminOnly } from '@/components/auth/RoleGuard';
 import { dictionariesService } from '@/services/dictionaries';
 import DictionaryValueTable from '@/components/admin/DictionaryValueTable';
 import { useToast } from '@/hooks/useToast';
@@ -160,17 +159,7 @@ const DictionaryEdit: React.FC = () => {
   }
 
   return (
-    <AdminOnly fallback={
-      <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Access Denied
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          You need administrator privileges to access this page.
-        </Typography>
-      </Container>
-    }>
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
         {/* Header */}
         <Box mb={4}>
           <Box display="flex" alignItems="center" gap={2} mb={2}>
@@ -323,7 +312,6 @@ const DictionaryEdit: React.FC = () => {
           </Box>
         )}
       </Container>
-    </AdminOnly>
   );
 };
 

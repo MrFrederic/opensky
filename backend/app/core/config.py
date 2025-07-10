@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     # Application settings
     environment: str = "development"
     telegram_bot_token: Optional[str] = None
+    telegram_bot_username: Optional[str] = None
     
     # JWT settings
     access_token_expire_minutes: int = 30

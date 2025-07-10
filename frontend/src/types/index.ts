@@ -9,6 +9,14 @@ export enum UserRole {
   ADMINISTRATOR = "administrator"
 }
 
+// Gender enum matching backend
+export enum Gender {
+  MALE = "male",
+  FEMALE = "female",
+  OTHER = "other",
+  PREFER_NOT_TO_SAY = "prefer_not_to_say"
+}
+
 export interface UserRoleAssignment {
   role: UserRole;
   created_at: string;
@@ -19,12 +27,20 @@ export interface User {
   id: number;
   telegram_id: string;
   first_name: string;
+  middle_name?: string;
   last_name: string;
+  display_name?: string;
+  date_of_birth?: string; // ISO date string
   username?: string;
   email?: string;
   phone?: string;
-  license_document_url?: string;
-  avatar_url?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  gender?: Gender;
+  photo_url?: string;
+  medical_clearance_date?: string; // ISO date string
+  medical_clearance_is_confirmed?: boolean;
+  is_active?: boolean;
   roles: UserRoleAssignment[];
   created_at: string;
   updated_at?: string;

@@ -7,9 +7,9 @@ import {
   CircularProgress,
   Tooltip
 } from '@mui/material';
-import { PhotoCamera } from '@mui/icons-material';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { usersService } from '@/services/users';
+import { PhotoCamera, Close } from '@mui/icons-material';
+import { useMutation } from '@tanstack/react-query';
+import { fileService } from '@/services/files';
 import { useToastContext } from '@/components/common/ToastProvider';
 import { User } from '@/types';
 
@@ -17,47 +17,39 @@ interface AvatarUploadProps {
   user: User;
   size?: number;
   editable?: boolean;
-  onAvatarUpdate?: (user: User) => void;
-  currentUserId?: number; // Add this prop to distinguish admin vs self
+  onPhotoUrlChange?: (photoUrl: string | null) => void; // Callback to update form data
+  stagedPhotoUrl?: string | null; // Photo URL staged for saving
+  isUploading?: boolean; // External upload state
 }
 
 export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   user,
   size = 120,
   editable = true,
-  onAvatarUpdate,
-  currentUserId,
+  onPhotoUrlChange,
+  stagedPhotoUrl,
+  isUploading: externalUploading = false,
 }) => {
-  const [isUploading, setIsUploading] = useState(false);
+  const [isLocalUploading, setIsLocalUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const queryClient = useQueryClient();
   const toast = useToastContext();
 
-  // Choose upload function based on context
-  const uploadFn = (file: File) => {
-    if (currentUserId && user.id !== currentUserId) {
-      // Admin uploading for another user
-      console.log(`Admin (${currentUserId}) uploading avatar for user ${user.id}`);
-      return usersService.uploadAvatarForUser(user.id!, file);
-    }
-    // Self upload
-    console.log(`User uploading own avatar (${user.id})`);
-    return usersService.uploadAvatar(file);
-  };
+  const isUploading = externalUploading || isLocalUploading;
 
-  // Avatar upload mutation
-  const uploadAvatarMutation = useMutation({
-    mutationFn: uploadFn,
-    onSuccess: (updatedUser) => {
-      queryClient.invalidateQueries({ queryKey: ['user', user.id] });
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      toast.success('Avatar updated successfully');
-      onAvatarUpdate?.(updatedUser);
-      setIsUploading(false);
+  // File upload mutation - only uploads file and returns URL
+  const uploadFileMutation = useMutation({
+    mutationFn: async (file: File): Promise<string> => {
+      const uploadResponse = await fileService.uploadImage(file);
+      return uploadResponse.file_url;
+    },
+    onSuccess: (fileUrl) => {
+      toast.success('Photo uploaded successfully. Click Save to update your profile.');
+      onPhotoUrlChange?.(fileUrl);
+      setIsLocalUploading(false);
     },
     onError: (error) => {
-      toast.error(`Failed to upload avatar: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setIsUploading(false);
+      toast.error(`Failed to upload photo: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setIsLocalUploading(false);
     },
   });
 
@@ -78,8 +70,8 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
       return;
     }
 
-    setIsUploading(true);
-    uploadAvatarMutation.mutate(file);
+    setIsLocalUploading(true);
+    uploadFileMutation.mutate(file);
   };
 
   const handleUploadClick = () => {
@@ -113,13 +105,13 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
     >
       <Box sx={{ position: 'relative' }}>
         <Avatar
-          src={user.avatar_url}
+          src={stagedPhotoUrl || user.photo_url}
           sx={{
             width: size,
             height: size,
             fontSize: size / 3,
             border: '3px solid',
-            borderColor: 'background.paper',
+            borderColor: stagedPhotoUrl ? 'warning.main' : 'background.paper',
             boxShadow: 2
           }}
         >
@@ -146,7 +138,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
         )}
 
         {editable && (
-          <Tooltip title="Upload new avatar">
+          <Tooltip title="Upload new photo">
             <IconButton
               onClick={handleUploadClick}
               disabled={isUploading}
@@ -168,13 +160,46 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
             </IconButton>
           </Tooltip>
         )}
+
+        {editable && stagedPhotoUrl && (
+          <Tooltip title="Remove staged photo">
+            <IconButton
+              onClick={() => onPhotoUrlChange?.(null)}
+              sx={{
+                position: 'absolute',
+                top: -8,
+                right: -8,
+                backgroundColor: 'error.main',
+                color: 'white',
+                width: 32,
+                height: 32,
+                '&:hover': {
+                  backgroundColor: 'error.dark',
+                },
+                boxShadow: 2
+              }}
+            >
+              <Close fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
 
       {editable && (
         <Typography variant="caption" color="text.secondary" textAlign="center">
-          Click the camera icon to upload a new avatar
-          <br />
-          Max size: 10MB • Formats: JPG, PNG, GIF, WebP
+          {stagedPhotoUrl ? (
+            <>
+              <strong>New photo ready!</strong>
+              <br />
+              Click Save to update your profile
+            </>
+          ) : (
+            <>
+              Click the camera icon to upload a new photo
+              <br />
+              Max size: 10MB • Formats: JPG, PNG, GIF, WebP
+            </>
+          )}
         </Typography>
       )}
 

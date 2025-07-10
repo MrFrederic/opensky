@@ -21,7 +21,6 @@ import {
   FilterList as Filter
 } from '@mui/icons-material';
 import { useToastContext } from '@/components/common/ToastProvider';
-import { AdminOnly } from '@/components/auth/RoleGuard';
 import { usersService } from '@/services/users';
 import UserTable from '@/components/admin/UserTable';
 import { UserRole } from '@/types';
@@ -66,17 +65,7 @@ const UserList: React.FC = () => {
   const error = usersQuery.error;
 
   return (
-    <AdminOnly fallback={
-      <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Access Denied
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          You need administrator privileges to access this page.
-        </Typography>
-      </Container>
-    }>
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
         {/* Header */}
         <Box mb={4}>
           <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
@@ -182,7 +171,6 @@ const UserList: React.FC = () => {
           </Box>
         )}
       </Container>
-    </AdminOnly>
   );
 };
 

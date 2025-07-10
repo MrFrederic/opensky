@@ -15,6 +15,7 @@ import { useAuthStore } from '@/stores/auth';
 import { UserRole } from '@/types';
 import { hasRole, hasAnyRole, hasAllRoles, hasPermission, ROLE_PERMISSIONS } from '@/lib/rbac';
 import LoginModal from './LoginModal';
+import NotFoundPage from '@/pages/NotFoundPage';
 
 interface RoleGuardProps {
   children: React.ReactNode;
@@ -32,6 +33,8 @@ interface RoleGuardProps {
   showLoadingState?: boolean;
   /** If true, show full-page authentication required screen for unauthenticated users */
   requireAuth?: boolean;
+  /** If true, use 404 page as fallback for access denied (default: true for page-level guards) */
+  use404Fallback?: boolean;
 }
 
 /**
@@ -70,7 +73,8 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
   permission,
   fallback = null,
   showLoadingState = false,
-  requireAuth = false
+  requireAuth = false,
+  use404Fallback = false
 }) => {
   const { user, isLoading } = useUser();
   const { isAuthenticated } = useAuthStore();
@@ -127,7 +131,16 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
     hasAccess = hasAllRoles(user, allRoles);
   }
 
-  return hasAccess ? <>{children}</> : <>{fallback}</>;
+  if (hasAccess) {
+    return <>{children}</>;
+  }
+
+  // If access denied, use 404 fallback if requested, otherwise use provided fallback
+  if (use404Fallback) {
+    return <NotFoundPage />;
+  }
+
+  return <>{fallback}</>;
 };
 
 /**
@@ -148,38 +161,43 @@ export const useRoleCheck = () => {
 
 /**
  * Convenience components for common role checks
+ * These use 404 fallback by default for page-level protection
  */
 
-export const AdminOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
+export const AdminOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode; use404?: boolean }> = ({ 
   children, 
-  fallback 
+  fallback,
+  use404 = true
 }) => (
-  <RoleGuard permission="ADMIN_ACCESS" fallback={fallback}>
+  <RoleGuard permission="ADMIN_ACCESS" fallback={fallback} use404Fallback={use404}>
     {children}
   </RoleGuard>
 );
 
-export const InstructorOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
+export const InstructorOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode; use404?: boolean }> = ({ 
   children, 
-  fallback 
+  fallback,
+  use404 = true
 }) => (
-  <RoleGuard permission="INSTRUCTOR_ACCESS" fallback={fallback}>
+  <RoleGuard permission="INSTRUCTOR_ACCESS" fallback={fallback} use404Fallback={use404}>
     {children}
   </RoleGuard>
 );
 
-export const SportJumperOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
+export const SportJumperOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode; use404?: boolean }> = ({ 
   children, 
-  fallback 
+  fallback,
+  use404 = true
 }) => (
-  <RoleGuard anyRole={[UserRole.SPORT_PAID, UserRole.SPORT_FREE, UserRole.AFF_STUDENT]} fallback={fallback}>
+  <RoleGuard anyRole={[UserRole.SPORT_PAID, UserRole.SPORT_FREE, UserRole.AFF_STUDENT]} fallback={fallback} use404Fallback={use404}>
     {children}
   </RoleGuard>
 );
 
-export const ExcludeNewUsers: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
+export const ExcludeNewUsers: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode; use404?: boolean }> = ({ 
   children, 
-  fallback 
+  fallback,
+  use404 = true
 }) => (
   <RoleGuard 
     anyRole={[
@@ -191,6 +209,7 @@ export const ExcludeNewUsers: React.FC<{ children: React.ReactNode; fallback?: R
       UserRole.ADMINISTRATOR
     ]} 
     fallback={fallback}
+    use404Fallback={use404}
   >
     {children}
   </RoleGuard>

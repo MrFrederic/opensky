@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { AuthTokens, User } from '@/types';
+import { AuthTokens, User, Gender } from '@/types';
 import { useAuthStore } from '@/stores/auth';
 
 export interface TelegramAuthData {
@@ -17,13 +17,32 @@ export interface RefreshResponse {
   token_type: string;
 }
 
+export interface UpdateCurrentUserData {
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
+  display_name?: string;
+  username?: string;
+  email?: string;
+  phone?: string;
+  date_of_birth?: string; // ISO date string
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  gender?: Gender;
+  photo_url?: string;
+}
+
 export const authService = {
-  // Get Telegram bot username from environment variable
+  // Get Telegram bot username from backend configuration
   getTelegramBotUsername: async (): Promise<{ username: string }> => {
-    // Access the environment variable through import.meta.env
-    // Will be replaced at build time with the actual value
-    const username = import.meta.env.TELEGRAM_BOT_USERNAME || '';
-    return { username: username.replace('@', '') };
+    try {
+      const response = await api.get('/config/config');
+      const username = response.data.telegram_bot_username || '';
+      return { username: username.replace('@', '') };
+    } catch (error) {
+      console.error('Failed to fetch Telegram bot username:', error);
+      return { username: '' };
+    }
   },
 
   // Authenticate with Telegram
@@ -52,7 +71,7 @@ export const authService = {
   },
 
   // Update current user
-  updateCurrentUser: async (userData: Partial<User>): Promise<User> => {
+  updateCurrentUser: async (userData: UpdateCurrentUserData): Promise<User> => {
     const response = await api.put('/users/me', userData);
     return response.data;
   },

@@ -9,12 +9,9 @@ class UserRole(str, Enum):
     TANDEM_INSTRUCTOR = "tandem_instructor"
     AFF_INSTRUCTOR = "aff_instructor"
     ADMINISTRATOR = "administrator"
-
-class ManifestStatus(str, Enum):
-    PENDING = "pending"
-    APPROVED = "approved"
-    DECLINED = "declined"
-
-class TandemBookingStatus(str, Enum):
-    CONFIRMED = "confirmed"
-    CANCELLED = "cancelled"
+    
+class Gender(str, Enum):
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+    PREFER_NOT_TO_SAY = "prefer_not_to_say"

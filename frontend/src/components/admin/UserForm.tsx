@@ -9,29 +9,48 @@ import {
   Checkbox,
   Typography,
   Box,
+  MenuItem,
+  Select,
+  InputLabel,
+  Button,
+  Paper,
 } from '@mui/material';
-import { Phone, Email as Mail, Tag as Hash, Security as Shield } from '@mui/icons-material';
-import { UserRole } from '@/types';
+import { Phone, Email as Mail, Tag as Hash, Security as Shield, Check } from '@mui/icons-material';
+import { UserRole, Gender } from '@/types';
 import { getRoleDisplayName } from '@/utils/userManagement';
 
 export interface UserFormData {
   first_name: string;
+  middle_name?: string;
   last_name: string;
+  display_name?: string;
+  date_of_birth?: string;
   username: string;
   email: string;
   phone: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  gender?: Gender;
   telegram_id?: string;
-  license_document_url?: string;
+  photo_url?: string;
+  medical_clearance_date?: string;
+  medical_clearance_is_confirmed?: boolean;
+  is_active?: boolean;
 }
 
 interface UserFormProps {
   formData: UserFormData;
   selectedRoles?: UserRole[];
   errors?: Record<string, string>;
-  isEditing: boolean;
   canEditRoles?: boolean;
+  showAdminFields?: boolean;
+  hasUnsavedChanges?: boolean;
+  isSaving?: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRoleToggle?: (role: UserRole) => void;
+  onPhotoUpload?: (file: File) => Promise<void>;
+  isPhotoUploading?: boolean;
+  onSave?: () => void;
 }
 
 // Role labels are now handled by getRoleDisplayName from userManagement utils
@@ -40,173 +59,326 @@ const UserForm: React.FC<UserFormProps> = ({
   formData,
   selectedRoles = [],
   errors = {},
-  isEditing,
   canEditRoles = false,
+  showAdminFields = true,
+  hasUnsavedChanges = false,
+  isSaving = false,
   onInputChange,
   onRoleToggle,
+  onSave,
 }) => {
   return (
-    <>
-      {/* Basic Information */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            required
-            label="First Name"
-            name="first_name"
-            value={formData.first_name}
-            onChange={onInputChange}
-            disabled={!isEditing}
-            error={!!errors.first_name}
-            helperText={errors.first_name}
-          />
-        </Grid>
-        
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            required
-            label="Last Name"
-            name="last_name"
-            value={formData.last_name}
-            onChange={onInputChange}
-            disabled={!isEditing}
-            error={!!errors.last_name}
-            helperText={errors.last_name}
-          />
-        </Grid>
-
-        {formData.telegram_id !== undefined && (
-          <Grid item xs={12} md={6}>
+    <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3 }}>
+      {/* Save Button - Fixed at top right */}
+      {onSave && (
+        <Box sx={{ mb: 3, pb: 2, borderBottom: 1, borderColor: 'divider', flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<Check />}
+            onClick={onSave}
+            disabled={isSaving || !hasUnsavedChanges}
+          >
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </Box>
+      )}
+      
+      {/* Scrollable content */}
+      <Box sx={{ flex: 1, overflow: 'visible', pr: 1 }}>
+        {/* Basic Information */}
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid item xs={12} sm={6} lg={4}>
             <TextField
               fullWidth
               required
-              label="Telegram ID"
-              name="telegram_id"
-              value={formData.telegram_id}
+              label="First Name"
+              name="first_name"
+              value={formData.first_name}
               onChange={onInputChange}
-              placeholder="e.g., 123456789"
-              disabled={!isEditing}
-              error={!!errors.telegram_id}
-              helperText={errors.telegram_id || "Numeric Telegram user ID (not the username)"}
+              error={!!errors.first_name}
+              helperText={errors.first_name}
             />
           </Grid>
-        )}
-        
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Username"
-            name="username"
-            value={formData.username ? `@${formData.username}` : ''}
-            onChange={onInputChange}
-            disabled={!isEditing}
-            placeholder="@username"
-            helperText="Telegram username (stored without @)"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Hash />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
-        
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            type="email"
-            label="Email"
-            name="email"
-            value={formData.email}
-            onChange={onInputChange}
-            disabled={!isEditing}
-            placeholder="user@example.com"
-            error={!!errors.email}
-            helperText={errors.email}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Mail />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
-        
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            type="tel"
-            label="Phone"
-            name="phone"
-            value={formData.phone}
-            onChange={onInputChange}
-            disabled={!isEditing}
-            placeholder="+1234567890"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Phone />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
-        
-        {formData.license_document_url !== undefined && (
-          <Grid item xs={12} md={6}>
+
+          <Grid item xs={12} sm={6} lg={4}>
             <TextField
               fullWidth
-              type="url"
-              label="License Document URL"
-              name="license_document_url"
-              value={formData.license_document_url}
+              label="Middle Name"
+              name="middle_name"
+              value={formData.middle_name || ''}
               onChange={onInputChange}
-              disabled={!isEditing}
+              error={!!errors.middle_name}
+              helperText={errors.middle_name}
             />
           </Grid>
-        )}
-      </Grid>
 
-      {/* Roles Selection */}
-      {canEditRoles && isEditing && onRoleToggle && (
-        <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 3 }}>
-          <FormControl error={!!errors.roles}>
-            <Box display="flex" alignItems="center" gap={1} mb={2}>
-              <Shield />
-              <Typography variant="subtitle2">User Roles</Typography>
-            </Box>
-            {errors.roles && (
-              <Typography variant="body2" color="error" sx={{ mb: 2 }}>
-                {errors.roles}
-              </Typography>
-            )}
-            
-            <FormGroup>
-              <Grid container spacing={1}>
-                {Object.values(UserRole).map((role) => (
-                  <Grid item xs={12} md={6} key={role}>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={selectedRoles.includes(role)}
-                          onChange={() => onRoleToggle(role)}
-                          color="primary"
-                        />
-                      }
-                      label={getRoleDisplayName(role)}
-                    />
-                  </Grid>
-                ))}
+          <Grid item xs={12} sm={6} lg={4}>
+            <TextField
+              fullWidth
+              required
+              label="Last Name"
+              name="last_name"
+              value={formData.last_name}
+              onChange={onInputChange}
+              error={!!errors.last_name}
+              helperText={errors.last_name}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6} lg={4}>
+            <TextField
+              fullWidth
+              label="Display Name"
+              name="display_name"
+              value={formData.display_name || ''}
+              onChange={onInputChange}
+              error={!!errors.display_name}
+              helperText={errors.display_name || "How the user prefers to be called"}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6} lg={4}>
+            <TextField
+              fullWidth
+              type="date"
+              label="Date of Birth"
+              name="date_of_birth"
+              value={formData.date_of_birth || ''}
+              onChange={onInputChange}
+              error={!!errors.date_of_birth}
+              helperText={errors.date_of_birth}
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6} lg={4}>
+            <FormControl fullWidth>
+              <InputLabel>Gender</InputLabel>
+              <Select
+                name="gender"
+                value={formData.gender || ''}
+                onChange={(e) => onInputChange({ target: { name: 'gender', value: e.target.value } } as any)}
+                label="Gender"
+                error={!!errors.gender}
+              >
+                <MenuItem value="">
+                  <em>Not specified</em>
+                </MenuItem>
+                <MenuItem value={Gender.MALE}>Male</MenuItem>
+                <MenuItem value={Gender.FEMALE}>Female</MenuItem>
+                <MenuItem value={Gender.OTHER}>Other</MenuItem>
+                <MenuItem value={Gender.PREFER_NOT_TO_SAY}>Prefer not to say</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {showAdminFields && formData.telegram_id !== undefined && (
+            <Grid item xs={12} sm={6} lg={4}>
+              <TextField
+                fullWidth
+                required
+                label="Telegram ID"
+                name="telegram_id"
+                value={formData.telegram_id}
+                onChange={onInputChange}
+                placeholder="e.g., 123456789"
+                error={!!errors.telegram_id}
+                helperText={errors.telegram_id || "Numeric Telegram user ID (not the username)"}
+              />
+            </Grid>
+          )}
+
+          <Grid item xs={12} sm={6} lg={4}>
+            <TextField
+              fullWidth
+              label="Username"
+              name="username"
+              value={formData.username ? `@${formData.username}` : ''}
+              onChange={onInputChange}
+              placeholder="@username"
+              helperText="Telegram username (stored without @)"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Hash />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6} lg={4}>
+            <TextField
+              fullWidth
+              type="email"
+              label="Email"
+              name="email"
+              value={formData.email}
+              onChange={onInputChange}
+              placeholder="user@example.com"
+              error={!!errors.email}
+              helperText={errors.email}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Mail />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6} lg={4}>
+            <TextField
+              fullWidth
+              type="tel"
+              label="Phone"
+              name="phone"
+              value={formData.phone}
+              onChange={onInputChange}
+              placeholder="+1234567890"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Phone />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
+          {/* Emergency Contact Information */}
+          <Grid item xs={12}>
+            <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+              Emergency Contact
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12} sm={6} lg={4}>
+            <TextField
+              fullWidth
+              label="Emergency Contact Name"
+              name="emergency_contact_name"
+              value={formData.emergency_contact_name || ''}
+              onChange={onInputChange}
+              error={!!errors.emergency_contact_name}
+              helperText={errors.emergency_contact_name}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6} lg={4}>
+            <TextField
+              fullWidth
+              type="tel"
+              label="Emergency Contact Phone"
+              name="emergency_contact_phone"
+              value={formData.emergency_contact_phone || ''}
+              onChange={onInputChange}
+              placeholder="+1234567890"
+              error={!!errors.emergency_contact_phone}
+              helperText={errors.emergency_contact_phone}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Phone />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
+          {/* Medical Clearance Information */}
+          {showAdminFields && (
+            <>
+              <Grid item xs={12}>
+                <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+                  Medical Clearance
+                </Typography>
               </Grid>
-            </FormGroup>
-          </FormControl>
-        </Box>
-      )}
-    </>
+
+              <Grid item xs={12} sm={6} lg={4}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="Medical Clearance Date"
+                  name="medical_clearance_date"
+                  value={formData.medical_clearance_date || ''}
+                  onChange={onInputChange}
+                  error={!!errors.medical_clearance_date}
+                  helperText={errors.medical_clearance_date}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6} lg={4}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.medical_clearance_is_confirmed || false}
+                      onChange={(e) => onInputChange({ target: { name: 'medical_clearance_is_confirmed', value: e.target.checked } } as any)}
+                      color="primary"
+                    />
+                  }
+                  label="Medical Clearance Confirmed"
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6} lg={4}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.is_active !== false}
+                      onChange={(e) => onInputChange({ target: { name: 'is_active', value: e.target.checked } } as any)}
+                      color="primary"
+                    />
+                  }
+                  label="User Active"
+                />
+              </Grid>
+            </>
+          )}
+        </Grid>
+
+        {/* Roles Selection */}
+        {canEditRoles && onRoleToggle && (
+          <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 3, mt: 3 }}>
+            <FormControl error={!!errors.roles}>
+              <Box display="flex" alignItems="center" gap={1} mb={2}>
+                <Shield />
+                <Typography variant="subtitle2">User Roles</Typography>
+              </Box>
+              {errors.roles && (
+                <Typography variant="body2" color="error" sx={{ mb: 2 }}>
+                  {errors.roles}
+                </Typography>
+              )}
+
+              <FormGroup row sx={{ flexWrap: 'wrap' }}>
+                {Object.values(UserRole).map((role) => (
+                  <FormControlLabel
+                    key={role}
+                    control={
+                      <Checkbox
+                        checked={selectedRoles.includes(role)}
+                        onChange={() => onRoleToggle(role)}
+                        color="primary"
+                      />
+                    }
+                    label={getRoleDisplayName(role)}
+                    sx={{ minWidth: '180px', mr: 2, mb: 1 }}
+                  />
+                ))}
+              </FormGroup>
+            </FormControl>
+          </Box>
+        )}
+      </Box>
+    </Paper>
   );
 };
 

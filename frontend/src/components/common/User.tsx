@@ -8,7 +8,7 @@ interface UserProps {
     last_name?: string;
     username?: string;
     email?: string;
-    avatar_url?: string;
+    photo_url?: string;
   };
   size?: 'small' | 'medium' | 'large';
   showSubtext?: boolean;
@@ -102,7 +102,7 @@ const User: React.FC<UserProps> = ({
         gap={1}
       >
         <Avatar
-          src={user.avatar_url}
+          src={user.photo_url}
           sx={getAvatarSize()}
         >
           {getInitials()}
@@ -132,7 +132,7 @@ const User: React.FC<UserProps> = ({
   return (
     <Box display="flex" alignItems="center" gap={1.5}>
       <Avatar
-        src={user.avatar_url}
+        src={user.photo_url}
         sx={getAvatarSize()}
       >
         {getInitials()}

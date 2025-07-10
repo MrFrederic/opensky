@@ -48,11 +48,20 @@ export const processFieldValue = (name: string, value: string): string => {
 export const userToFormData = (user: User): UserFormData => {
   return {
     first_name: user.first_name || '',
+    middle_name: user.middle_name || '',
     last_name: user.last_name || '',
+    display_name: user.display_name || '',
+    date_of_birth: user.date_of_birth || '',
     username: user.username || '',
     email: user.email || '',
     phone: user.phone || '',
-    license_document_url: user.license_document_url || '',
+    emergency_contact_name: user.emergency_contact_name || '',
+    emergency_contact_phone: user.emergency_contact_phone || '',
+    gender: user.gender,
+    photo_url: user.photo_url || '',
+    medical_clearance_date: user.medical_clearance_date || '',
+    medical_clearance_is_confirmed: user.medical_clearance_is_confirmed || false,
+    is_active: user.is_active !== false,
   };
 };
 
@@ -76,6 +85,26 @@ export const validateUserForm = (formData: UserFormData, selectedRoles?: UserRol
 
   if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
     errors.email = 'Please enter a valid email address';
+  }
+
+  if (formData.phone && !/^\+?[\d\s\-\(\)]+$/.test(formData.phone)) {
+    errors.phone = 'Please enter a valid phone number';
+  }
+
+  if (formData.emergency_contact_phone && !/^\+?[\d\s\-\(\)]+$/.test(formData.emergency_contact_phone)) {
+    errors.emergency_contact_phone = 'Please enter a valid emergency contact phone number';
+  }
+
+  if (formData.date_of_birth) {
+    const birthDate = new Date(formData.date_of_birth);
+    const today = new Date();
+    if (birthDate >= today) {
+      errors.date_of_birth = 'Date of birth must be in the past';
+    }
+    const age = today.getFullYear() - birthDate.getFullYear();
+    if (age < 16) {
+      errors.date_of_birth = 'User must be at least 16 years old';
+    }
   }
 
   if (selectedRoles && selectedRoles.length === 0) {

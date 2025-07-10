@@ -1,6 +1,8 @@
 # Schemas module
 from .users import (
-    UserBase, UserCreate, UserUpdate, UserResponse, UserSummary,
+    UserBase, UserCreate, UserUpdate, UserResponse
+)
+from .auth import (
     TokenResponse, TelegramAuthData
 )
 from .dictionaries import (

@@ -17,7 +17,6 @@ import {
   Search, 
   FilterList as Filter 
 } from '@mui/icons-material';
-import { AdminOnly } from '@/components/auth/RoleGuard';
 import { dictionariesService } from '@/services/dictionaries';
 import DictionaryTable from '@/components/admin/DictionaryTable';
 import { useToast } from '@/hooks/useToast';
@@ -98,17 +97,7 @@ const DictionaryList: React.FC = () => {
   const error = dictionariesQuery.error;
 
   return (
-    <AdminOnly fallback={
-      <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Access Denied
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          You need administrator privileges to access this page.
-        </Typography>
-      </Container>
-    }>
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
         {/* Header */}
         <Box mb={4}>
           <Typography variant="h3" component="h1" gutterBottom>
@@ -220,7 +209,6 @@ const DictionaryList: React.FC = () => {
           </Box>
         )}
       </Container>
-    </AdminOnly>
   );
 };
 

@@ -6,9 +6,17 @@ import Footer from './Footer';
 
 const RootLayout: React.FC = () => {
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Header />
-      <Box component="main" sx={{ flex: 1 }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <Box sx={{ position: 'sticky', top: 0, zIndex: 1100 }}>
+        <Header />
+      </Box>
+      <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'visible' }}>
         <Outlet />
       </Box>
       <Footer />

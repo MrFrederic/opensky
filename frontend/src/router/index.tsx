@@ -2,11 +2,13 @@ import { createBrowserRouter } from 'react-router-dom';
 import RootLayout from '@/components/layouts/RootLayout';
 import HomePage from '@/pages/HomePage';
 import NotFoundPage from '@/pages/NotFoundPage';
+import Profile from '@/pages/Profile';
 import UserList from '@/pages/administration/UserList';
-import UserProfile from '@/pages/administration/UserProfile';
+import AdminUserDetails from '@/pages/administration/AdminUserDetails';
 import UserCreate from '@/pages/administration/UserCreate';
 import DictionaryList from '@/pages/administration/DictionaryList';
 import DictionaryEdit from '@/pages/administration/DictionaryEdit';
+import { AdminOnly } from '@/components/auth/RoleGuard';
 
 export const router = createBrowserRouter([
   {
@@ -19,27 +21,27 @@ export const router = createBrowserRouter([
       },
       {
         path: 'admin/users',
-        element: <UserList />,
+        element: <AdminOnly><UserList /></AdminOnly>,
       },
       {
         path: 'admin/users/new',
-        element: <UserCreate />,
+        element: <AdminOnly><UserCreate /></AdminOnly>,
       },
       {
         path: 'admin/users/:id',
-        element: <UserProfile />,
+        element: <AdminOnly><AdminUserDetails /></AdminOnly>,
       },
       {
         path: 'profile',
-        element: <UserProfile />,
+        element: <Profile />,
       },
       {
         path: 'admin/dictionaries',
-        element: <DictionaryList />,
+        element: <AdminOnly><DictionaryList /></AdminOnly>,
       },
       {
         path: 'admin/dictionaries/:id',
-        element: <DictionaryEdit />,
+        element: <AdminOnly><DictionaryEdit /></AdminOnly>,
       },
       {
         path: '*',
