@@ -1,4 +1,42 @@
 services:
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://user:pass@postgres:5432/dropzone_db
+      SECRET_KEY: your-secret-key-change-in-production
+      ENVIRONMENT: development
+      TELEGRAM_BOT_TOKEN: YOUR_TELEGRAM_BOT_TOKEN_HERE
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      REFRESH_TOKEN_EXPIRE_DAYS: 7
+      ALGORITHM: HS256
+      # MinIO configuration
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET_NAME: dropzone-files
+      MINIO_SECURE: "false"
+      # Public URL for file access (through nginx proxy)
+      FILES_BASE_URL: http://localhost/files
+    expose:
+      - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+  
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    environment:
+      # Pass Telegram bot username directly to frontend
+      # This is the same value used by the backend
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME}
+    depends_on:
+      - backend
+      - minio
+
   postgres:
     image: postgres:15
     environment:
@@ -29,32 +67,6 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
-  backend:
-    build: ./backend
-    environment:
-      DATABASE_URL: postgresql://user:pass@postgres:5432/dropzone_db
-      SECRET_KEY: your-secret-key-change-in-production
-      ENVIRONMENT: development
-      TELEGRAM_BOT_TOKEN: YOUR_TELEGRAM_BOT_TOKEN_HERE
-      ACCESS_TOKEN_EXPIRE_MINUTES: 30
-      REFRESH_TOKEN_EXPIRE_DAYS: 7
-      ALGORITHM: HS256
-      # MinIO configuration
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin123
-      MINIO_BUCKET_NAME: dropzone-files
-      MINIO_SECURE: "false"
-      # Public URL for file access (through nginx proxy)
-      FILES_BASE_URL: http://localhost/files
-    expose:
-      - "8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./backend:/app
-
   minio:
     image: minio/minio:latest
     environment:
@@ -71,21 +83,6 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
-
-  frontend:
-    build: 
-      context: ./frontend
-      args:
-        - API_HOST=http://backend:8000
-    environment:
-      - VITE_API_HOST=http://backend:8000
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-      - minio
-    volumes:
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
 volumes:
   postgres_data:

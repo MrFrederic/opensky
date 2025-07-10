@@ -1,9 +1,10 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
-from app.core.helpers import get_bot_username_from_token
 
 
 class Settings(BaseSettings):
+    # Static 
+
     # Database settings
     database_url: str = "postgresql://user:pass@localhost:5432/dropzone_db"
     
@@ -13,7 +14,6 @@ class Settings(BaseSettings):
     # Application settings
     environment: str = "development"
     telegram_bot_token: Optional[str] = None
-    telegram_bot_username: Optional[str] = None
     
     # JWT settings
     access_token_expire_minutes: int = 30
@@ -33,12 +33,5 @@ class Settings(BaseSettings):
         # Environment variables are loaded with this priority:
         # 1. Environment variables (from Docker Compose)
         # 2. Default values specified in the Settings class
-    
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        # Load the token from environment variables (set by Docker Compose)
-        if self.telegram_bot_token:
-            self.telegram_bot_username = get_bot_username_from_token(self.telegram_bot_token)
-
 
 settings = Settings()

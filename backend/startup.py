@@ -15,11 +15,6 @@ from app.models import Base
 from app.core.database import SessionLocal, engine
 
 # Import all models to ensure they're available for Alembic autogenerate
-from app.models.base import User, UserRoleAssignment, Dictionary, DictionaryValue
-from app.models.equipment import Equipment
-from app.models.loads import Load, Jump
-from app.models.manifests import Manifest
-from app.models.tandems import TandemBooking, TandemSlot
 from app.models.auth import RefreshToken
 
 
@@ -278,9 +273,6 @@ def main():
     
     # Step 5: Initialize basic data
     initialize_data()
-    
-    # Step 5: Initialize MinIO
-    minio_success = initialize_minio()
     
     print("✅ Database startup completed successfully!")
     print("=" * 50)

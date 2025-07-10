@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import verify_token
 from app.crud.users import user as user_crud
-from app.models.base import User, UserRole
+from app.models.users import User
+from app.models.enums import UserRole
 
 security = HTTPBearer()
 

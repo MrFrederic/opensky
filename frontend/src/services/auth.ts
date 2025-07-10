@@ -18,10 +18,12 @@ export interface RefreshResponse {
 }
 
 export const authService = {
-  // Get Telegram bot username
+  // Get Telegram bot username from environment variable
   getTelegramBotUsername: async (): Promise<{ username: string }> => {
-    const response = await api.get('/auth/telegram-auth/bot');
-    return { username: response.data.username.replace('@', '') };
+    // Access the environment variable through import.meta.env
+    // Will be replaced at build time with the actual value
+    const username = import.meta.env.TELEGRAM_BOT_USERNAME || '';
+    return { username: username.replace('@', '') };
   },
 
   // Authenticate with Telegram

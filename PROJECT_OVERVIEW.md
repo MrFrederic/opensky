@@ -13,13 +13,33 @@ This backend service manages all aspects of a dropzone operation including:
 - **Load Management**: Flight organization, jump tracking
 - **System Administration**: Configurable dictionaries, comprehensive reporting
 
+## 🔐 Telegram Authentication Flow
+
+The system uses Telegram Login Widget for authentication:
+
+1. **Frontend Configuration**: 
+   - The Telegram bot username is passed directly to the frontend via the environment variable `TELEGRAM_BOT_USERNAME`
+   - This follows the KISS principle by avoiding unnecessary API calls for configuration
+
+2. **Authentication Process**:
+   - User clicks "Login with Telegram" in the frontend
+   - Telegram widget authenticates the user through Telegram's servers
+   - Authentication data is sent to backend `/api/v1/auth/telegram-auth` endpoint
+   - Backend verifies the data and issues JWT tokens
+
+3. **Environment Setup**:
+   - Set `TELEGRAM_BOT_TOKEN` for the backend (for verification)
+   - Set `TELEGRAM_BOT_USERNAME` for the frontend widget (passed as `TELEGRAM_BOT_USERNAME`)
+
+This approach simplifies the architecture by eliminating unnecessary API calls while maintaining security.
+
 ## 🏗️ Architecture
 
 - **Framework**: FastAPI (Python 3.11+)
 - **Database**: PostgreSQL with SQLAlchemy ORM
 - **Authentication**: JWT tokens with Telegram SSO
 - **API Design**: RESTful with automatic OpenAPI documentation
-- **Deployment**: Docker containerized with docker-compose
+- **Deployment**: Docker containerized with docker compose
 
 ## 📁 Project Structure
 
@@ -45,23 +65,11 @@ backend/
 └── README.md             # Detailed documentation
 ```
 
-## 🚀 Quick Start
+## 🚀 Quick Start - Docker Compose
 
-### Option 1: Docker Compose (Recommended)
 ```bash
 # From project root
-docker-compose up --build
-```
-
-### Option 2: Local Development
-```bash
-cd backend
-pip install -r requirements.txt
-# Set environment variables manually (see docker-compose.yml for reference)
-export DATABASE_URL="postgresql://user:pass@localhost:5432/dropzone_db"
-export SECRET_KEY="your-secret-key-here"
-# ... other variables
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+docker compose up --build
 ```
 
 ## 📚 API Documentation
@@ -69,14 +77,6 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 Once running, comprehensive API documentation is available at:
 - **Interactive Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
-
-## 🔐 Security Features
-
-- **JWT Authentication**: Secure token-based authentication
-- **Role-Based Access Control**: Admin, Instructor, Sportsman, Newby roles
-- **Password Hashing**: bcrypt for secure password storage
-- **Request Validation**: Pydantic schemas for all inputs
-- **CORS Configuration**: Configurable cross-origin resource sharing
 
 ## 📊 Key Features Implemented
 
@@ -86,29 +86,6 @@ Once running, comprehensive API documentation is available at:
 - ✅ Role-based permissions (Newby, Individual Sportsman, Sportsman, Instructor)
 - ✅ Admin user management capabilities
 - ✅ Sportsman status request workflow
-
-### Tandem Operations (UR-005 to UR-008)
-- ✅ Tandem slot management
-- ✅ Booking system with availability checking
-- ✅ Date modification and cancellation
-- ✅ Admin oversight of all bookings
-
-### Sportsman Features (UR-009 to UR-010)
-- ✅ Digital logbook with jump history
-- ✅ Self-manifesting system
-- ✅ Equipment selection for jumps
-- ✅ Jump statistics and filtering
-
-### Equipment Management (UR-011 to UR-012)
-- ✅ Complete equipment inventory
-- ✅ Equipment categorization and status tracking
-- ✅ Usage history and availability management
-
-### Load Management (UR-013 to UR-017)
-- ✅ Manifest review and approval workflow
-- ✅ Load creation and management
-- ✅ Jump tracking within loads
-- ✅ Visibility for sportsmen and instructors
 
 ### System Administration (UR-018 to UR-019)
 - ✅ Configurable system dictionaries

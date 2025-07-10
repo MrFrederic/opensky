@@ -2,7 +2,8 @@ from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, and_
 from app.crud.base import CRUDBase
-from app.models.base import User, UserRole, UserRoleAssignment
+from app.models.users import User, UserRoleAssignment
+from app.models.enums import UserRole
 from app.schemas.users import UserCreate, UserUpdate
 import logging
 

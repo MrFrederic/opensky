@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime
-from app.models.base import UserRole
+from app.models.enums import UserRole
 
 
 class UserRoleResponse(BaseModel):

@@ -5,7 +5,8 @@ from app.api.deps import get_current_user, get_admin_user
 from app.core.database import get_db
 from app.crud.users import user as user_crud
 from app.schemas.users import UserResponse, UserUpdate, UserSummary, UserRoleUpdate, UserCreate
-from app.models.base import User, UserRole
+from app.models.users import User
+from app.models.enums import UserRole
 from app.core.storage import file_storage
 
 router = APIRouter()

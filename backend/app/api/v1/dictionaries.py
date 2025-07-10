@@ -9,7 +9,7 @@ from app.schemas.dictionaries import (
     DictionaryValueResponse, DictionaryValueCreate, DictionaryValueUpdate,
     DictionaryValueBase
 )
-from app.models.base import User
+from app.models.users import User
 
 router = APIRouter()
 

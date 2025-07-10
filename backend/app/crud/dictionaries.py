@@ -1,7 +1,7 @@
 from typing import List, Optional, Union
 from sqlalchemy.orm import Session
 from app.crud.base import CRUDBase
-from app.models.base import Dictionary, DictionaryValue
+from app.models.dictionaries import Dictionary, DictionaryValue
 from app.schemas.dictionaries import DictionaryCreate, DictionaryUpdate, DictionaryValueCreate, DictionaryValueUpdate
 
 

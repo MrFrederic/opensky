@@ -236,3 +236,25 @@ For questions, issues, or contributions, please:
 ---
 
 Built with ❤️ for the skydiving community
+
+## 🔐 Telegram Bot Configuration
+
+The system uses Telegram for authentication. For this to work properly, the Telegram bot username must be accessible to both the backend and frontend:
+
+1. **Get a Telegram Bot Token and Username**
+   - Create a new bot using [@BotFather](https://t.me/botfather) on Telegram
+   - Use the `/newbot` command and follow instructions
+   - Note both the bot token and username (with @ prefix)
+
+2. **Set Environment Variables**
+   - In your `docker-compose.yml`, ensure the `TELEGRAM_BOT_TOKEN` is set for the backend
+   - Add `TELEGRAM_BOT_USERNAME` variable to your Docker environment (this is shared with the frontend)
+
+   ```yaml
+   # Example in docker-compose.yml
+   environment:
+     TELEGRAM_BOT_TOKEN: "123456789:ABCdefGHIjklMNOpqrSTUvwxYZ"
+     TELEGRAM_BOT_USERNAME: "@your_bot_username"  # Include the @ symbol
+   ```
+
+The frontend service will automatically receive the bot username through the `TELEGRAM_BOT_USERNAME` environment variable, eliminating the need for an API call to fetch this information.

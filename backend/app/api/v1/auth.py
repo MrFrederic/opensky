@@ -1,9 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Cookie
 from sqlalchemy.orm import Session
 from typing import Optional
-import hashlib
-import hmac
-import time
 import logging
 
 from app.core.database import get_db
@@ -12,48 +9,13 @@ from app.core.config import settings
 from app.crud.users import user as user_crud
 from app.crud.auth import refresh_token as refresh_token_crud
 from app.schemas.users import UserCreate, UserResponse, TokenResponse, TelegramAuthData, TokenData
-from app.schemas.settings import BotUsername
-from app.models.base import UserRole, User
+from app.models.enums import UserRole
+from app.models.users import User
 from app.api.deps import get_current_user
+from app.core.helpers import validate_telegram_auth_data
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-
-def validate_telegram_auth_data(auth_data: TelegramAuthData) -> bool:
-    """
-    Validate Telegram auth data by checking the hash.
-    """
-    # Check if auth_date is not older than 24h
-    now = time.time()
-    auth_time = auth_data.auth_date
-    if now - auth_time > 86400:  # 24 hours
-        return False
-    
-    # Collect all fields except hash
-    data_check_arr = []
-    for key, value in auth_data.model_dump(exclude={"hash"}).items():
-        if value is not None:
-            data_check_arr.append(f"{key}={value}")
-    
-    data_check_string = "\n".join(sorted(data_check_arr))
-    
-    # Create secret key from bot token
-    if not settings.telegram_bot_token:
-        # For development, allow bypass if token not set
-        return True
-        
-    secret_key = hashlib.sha256(settings.telegram_bot_token.encode()).digest()
-    
-    # Generate hash and compare
-    computed_hash = hmac.new(
-        secret_key, 
-        data_check_string.encode(), 
-        hashlib.sha256
-    ).hexdigest()
-    
-    return computed_hash == auth_data.hash
-
 
 @router.post("/telegram-auth", response_model=TokenResponse)
 def telegram_auth(
@@ -114,19 +76,6 @@ def telegram_auth(
     )
     
     return TokenResponse(access_token=access_token)
-
-@router.get("/telegram-auth/bot", response_model=BotUsername)
-def get_bot_username():
-    """
-    Get the Telegram bot username from the settings to generate auth widget.
-    """
-    if not settings.telegram_bot_username:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Telegram bot username is not configured"
-        )
-    
-    return BotUsername(username=settings.telegram_bot_username)
 
 @router.post("/refresh", response_model=TokenResponse)
 def refresh_token_endpoint(
@@ -194,7 +143,6 @@ def refresh_token_endpoint(
     
     return TokenResponse(access_token=access_token)
 
-
 @router.post("/logout")
 def logout(
     response: Response,
@@ -220,7 +168,6 @@ def logout(
             logger.warning(f"Failed to revoke refresh token during logout: {e}")
     
     return {"detail": "Successfully logged out"}
-
 
 @router.post("/logout-all", status_code=status.HTTP_200_OK)
 def logout_all_devices(
