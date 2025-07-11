@@ -50,6 +50,9 @@ const ManifestingPage: React.FC = () => {
             aircraft_id: aircraftFilter || undefined,
             limit: 100,
         }),
+        refetchInterval: 5000, // Refetch every 5 seconds
+        staleTime: 0, // Always consider data stale to ensure visual updates
+        refetchIntervalInBackground: true, // Continue refetching even when window is not focused
     });
 
     // Fetch aircraft for filter dropdown
@@ -191,15 +194,26 @@ const ManifestingPage: React.FC = () => {
     const aircraft = aircraftQuery.data || [];
     const isLoading = loadsQuery.isLoading;
 
+    // Debug log for data updates
+    useEffect(() => {
+        if (loadsQuery.dataUpdatedAt) {
+            console.log('Loads data updated at:', new Date(loadsQuery.dataUpdatedAt).toLocaleTimeString());
+        }
+    }, [loadsQuery.dataUpdatedAt]);
+
     // Update selected load when loads change
     useEffect(() => {
-        if (selectedLoad) {
+        if (selectedLoad && loads.length > 0) {
             const updatedLoad = loads.find(l => l.id === selectedLoad.id);
             if (updatedLoad) {
+                // Force update even if the object reference is the same
                 setSelectedLoad(updatedLoad);
+            } else {
+                // Load was deleted, clear selection
+                setSelectedLoad(null);
             }
         }
-    }, [loads, selectedLoad]);
+    }, [loads]);
 
     return (
         <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -208,6 +222,7 @@ const ManifestingPage: React.FC = () => {
                 {/* First Column - Load List */}
                 <Box sx={{ width: 300, borderRight: 1, borderColor: 'divider' }}>
                     <LoadTable
+                        key={`loads-${loads.length}-${loadsQuery.dataUpdatedAt}`} // Force re-render when data updates
                         loads={loads}
                         aircraft={aircraft}
                         statusFilter={statusFilter}
@@ -227,6 +242,7 @@ const ManifestingPage: React.FC = () => {
                     {selectedLoad ? (
                         <>
                             <LoadControlPanel
+                                key={selectedLoad.id} // Force re-render when load changes
                                 selectedLoad={selectedLoad}
                                 onStatusChange={handleStatusChange}
                                 onReservedSpacesChange={handleReservedSpacesChange}
@@ -337,4 +353,4 @@ const ManifestingPage: React.FC = () => {
     );
 };
 
-            export default ManifestingPage;
+export default ManifestingPage;

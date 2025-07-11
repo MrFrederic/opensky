@@ -5,6 +5,7 @@ from sqlalchemy import text
 from app.api import router
 from app.core.config import settings
 from app.core.database import get_db, engine
+from app.core.load_status_scheduler import start_scheduler
 import logging
 
 # Configure logging
@@ -22,7 +23,7 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup_event():
-    """Verify database connectivity on startup"""
+    """Verify database connectivity on startup and start background scheduler"""
     try:
         logger.info("🔍 Verifying database connectivity...")
         db = next(get_db())
@@ -45,7 +46,9 @@ async def startup_event():
             logger.info("✅ Database startup verification completed successfully")
         else:
             logger.warning("⚠️  No tables found - database may need initialization")
-            
+        
+        # Start the background scheduler for load status updates
+        start_scheduler()
     except Exception as e:
         logger.error(f"❌ Database startup verification failed: {str(e)}")
         raise e

@@ -213,7 +213,7 @@ const LoadTable: React.FC<LoadTableProps> = ({
                         {load.reserved_spaces}
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center', color: 'inherit' }}>
-                        {minutesUntilDept > 0 ? minutesUntilDept : Math.abs(minutesUntilDept)}
+                        {minutesUntilDept}
                       </TableCell>
                       <TableCell sx={{ color: 'inherit' }}>
                         {getStatusLabel(load.status)}

@@ -18,7 +18,7 @@ import {
   Add as AddIcon,
   Remove as RemoveIcon,
 } from '@mui/icons-material';
-import { format } from 'date-fns';
+import { format, differenceInMinutes } from 'date-fns';
 
 import { Load, LoadStatus } from '@/types';
 
@@ -63,6 +63,10 @@ const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
       onDepartureTimeChange(selectedLoad.id, newTime.toISOString());
     }
   };
+
+  const getMinutesUntilDeparture = (departure: string) => {
+    return differenceInMinutes(new Date(departure), new Date());
+  };
   return (
     <Box>
       {/* Load Stats Header */}
@@ -72,10 +76,9 @@ const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
           Jumpers: {/* TODO */} | 
           Open Slots: {/* TODO */} | 
           {(() => {
-            const depDate = new Date(selectedLoad.departure);
-            const now = new Date();
-            const diffMins = Math.max(0, Math.round((depDate.getTime() - now.getTime()) / 60000));
-            return ` Departs: ${diffMins} mins (${format(depDate, 'HH:mm')})`;
+            const deptTime = format(new Date(selectedLoad.departure), 'HH:mm');
+            const diffMins = getMinutesUntilDeparture(selectedLoad.departure);
+            return ` Departs: ${diffMins} mins (${deptTime})`;
           })()}
         </Typography>
       </Box>
