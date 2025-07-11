@@ -21,7 +21,7 @@ import { useAuthStore } from '@/stores/auth';
 import { authService } from '@/services/auth';
 import { useUser } from '@/hooks/useUser';
 import { useToastContext } from '@/components/common/ToastProvider';
-import { RoleGuard, ExcludeNewUsers, AdminOnly } from '@/components/auth/RoleGuard';
+import { AdminOnly } from '@/components/auth/RoleGuard';
 import User from '@/components/common/User';
 import LoginModal from '@/components/auth/LoginModal';
 
@@ -84,6 +84,13 @@ const Header: React.FC = () => {
             </Button>
             {isAuthenticated && (
               <>
+                {/* Manifesting Link */}
+                <AdminOnly>
+                  <Button component={Link} to="/manifesting" color="inherit">
+                    Manifesting
+                  </Button>
+                </AdminOnly>
+                
                 {/* Administration Menu */}
                 <AdminOnly>
                   <Button
@@ -100,6 +107,12 @@ const Header: React.FC = () => {
                   >
                     <MenuItem component={Link} to="/admin/users" onClick={handleAdminMenuClose}>
                       Users
+                    </MenuItem>
+                    <MenuItem component={Link} to="/admin/jump-types" onClick={handleAdminMenuClose}>
+                      Jump Types
+                    </MenuItem>
+                    <MenuItem component={Link} to="/admin/aircraft" onClick={handleAdminMenuClose}>
+                      Aircraft
                     </MenuItem>
                     <MenuItem component={Link} to="/admin/dictionaries" onClick={handleAdminMenuClose}>
                       Dictionaries

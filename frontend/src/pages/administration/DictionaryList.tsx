@@ -19,11 +19,11 @@ import {
 } from '@mui/icons-material';
 import { dictionariesService } from '@/services/dictionaries';
 import DictionaryTable from '@/components/admin/DictionaryTable';
-import { useToast } from '@/hooks/useToast';
+import { useToastContext } from '@/components/common/ToastProvider';
 
 const DictionaryList: React.FC = () => {
   const queryClient = useQueryClient();
-  const toast = useToast();
+  const toast = useToastContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
   const [typeFilter, setTypeFilter] = useState<'all' | 'system' | 'custom'>('all');

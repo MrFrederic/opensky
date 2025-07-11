@@ -15,3 +15,12 @@ class Gender(str, Enum):
     FEMALE = "female"
     OTHER = "other"
     PREFER_NOT_TO_SAY = "prefer_not_to_say"
+
+class AircraftType(str, Enum):
+    PLANE = "plane"
+    HELI = "heli"
+
+class LoadStatus(str, Enum):
+    FORMING = "forming"
+    ON_CALL = "on_call"
+    DEPARTED = "departed"

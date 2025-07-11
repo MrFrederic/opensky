@@ -110,7 +110,7 @@ def create_user(
 
 
 @router.get("/{user_id}", response_model=UserResponse)
-def get_user(
+def read_user(
     user_id: int,
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_admin_user)

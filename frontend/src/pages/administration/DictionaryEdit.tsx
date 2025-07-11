@@ -24,12 +24,12 @@ import {
 } from '@mui/icons-material';
 import { dictionariesService } from '@/services/dictionaries';
 import DictionaryValueTable from '@/components/admin/DictionaryValueTable';
-import { useToast } from '@/hooks/useToast';
+import { useToastContext } from '@/components/common/ToastProvider';
 
 const DictionaryEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
-  const toast = useToast();
+  const toast = useToastContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
   const [typeFilter, setTypeFilter] = useState<'all' | 'system' | 'custom'>('all');

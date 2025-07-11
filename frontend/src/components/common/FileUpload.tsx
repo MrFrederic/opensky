@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { fileService, UploadResponse } from '../../services/files';
-import { useToast } from '../../hooks/useToast';
+import { useToastContext } from './ToastProvider';
 
 interface FileUploadProps {
   onUpload?: (response: UploadResponse) => void;
@@ -20,7 +20,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { success: showSuccess, error: showError } = useToast();
+  const { success: showSuccess, error: showError } = useToastContext();
 
   const getAcceptAttribute = () => {
     switch (acceptedTypes) {

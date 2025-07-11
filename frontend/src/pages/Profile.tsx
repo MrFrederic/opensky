@@ -18,7 +18,7 @@ import {
 import { Phone, Email as Mail } from '@mui/icons-material';
 
 import { Gender } from '@/types';
-import { useToast } from '@/hooks/useToast';
+import { useToastContext } from '@/components/common/ToastProvider';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { authService } from '@/services/auth';
 import { AvatarUpload } from '@/components/common/AvatarUpload';
@@ -44,7 +44,7 @@ interface ProfileFormData {
 
 const Profile: React.FC = () => {
   const queryClient = useQueryClient();
-  const toast = useToast();
+  const toast = useToastContext();
 
   // Form state
   const [formData, setFormData] = useState<ProfileFormData>({

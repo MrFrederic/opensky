@@ -42,7 +42,7 @@ def wait_for_db(max_retries=30, retry_interval=2):
 
 
 def run_migrations():
-    """Run Alembic migrations with improved change detection"""
+    """Run Alembic migrations with improved change detection and error handling"""
     print("🔄 Running database migrations...")
     
     try:
@@ -78,6 +78,22 @@ def run_migrations():
                 return False
             print("✅ Initial migration created")
         else:
+            current_revision = current_rev_result.stdout.strip()
+            print(f"📝 Current database revision: {current_revision}")
+            
+            # Check if database is at head revision
+            head_result = subprocess.run(
+                ["alembic", "heads"],
+                capture_output=True,
+                text=True
+            )
+            
+            if head_result.returncode == 0:
+                head_revision = head_result.stdout.strip()
+                if current_revision and head_revision and current_revision.split()[0] == head_revision:
+                    print("✅ Database is up to date")
+                    return True
+            
             # Check if we need new migrations by trying to create one
             print("🔍 Checking for model changes...")
             temp_migration_result = subprocess.run(
@@ -127,11 +143,57 @@ def run_migrations():
             print("✅ Database migrations completed successfully")
             return True
         else:
-            print(f"❌ Migration failed: {result.stderr}")
-            return False
+            # Check if this is a "table already exists" error or similar
+            error_output = result.stderr.lower()
+            if ("already exists" in error_output or 
+                "duplicate" in error_output):
+                print("⚠️  Some database objects already exist, attempting to sync migration state...")
+                
+                # Try to identify which migration should be marked as applied
+                # This is a best-effort attempt to recover from partial migration states
+                sync_result = _attempt_migration_sync()
+                if sync_result:
+                    print("✅ Migration state synchronized")
+                    return True
+                else:
+                    print("❌ Could not synchronize migration state")
+                    return False
+            else:
+                print(f"❌ Migration failed: {result.stderr}")
+                return False
             
     except Exception as e:
         print(f"❌ Error running migrations: {e}")
+        return False
+
+
+def _attempt_migration_sync():
+    """Attempt to synchronize migration state when objects already exist"""
+    try:
+        # Get list of migration files
+        version_files = []
+        if os.path.exists("alembic/versions"):
+            version_files = [f for f in os.listdir("alembic/versions") if f.endswith('.py') and f != '__init__.py']
+        
+        if version_files:
+            # Sort by creation time to get the latest
+            latest_file = max(version_files, key=lambda x: os.path.getctime(os.path.join("alembic/versions", x)))
+            # Extract revision ID from filename (first part before underscore)
+            revision_id = latest_file.split('_')[0]
+            
+            print(f"🔄 Attempting to mark migration {revision_id} as applied...")
+            result = subprocess.run(
+                ["alembic", "stamp", revision_id],
+                capture_output=True,
+                text=True
+            )
+            
+            return result.returncode == 0
+        
+        return False
+        
+    except Exception as e:
+        print(f"❌ Error during migration sync: {e}")
         return False
 
 

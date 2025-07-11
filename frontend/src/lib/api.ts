@@ -54,6 +54,12 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config;
     
+    // Global error handling for certain status codes
+    if (error.response?.status === 500) {
+      // Server errors should be logged for debugging
+      console.error('Server error occurred:', error.response.data);
+    }
+    
     // If the error is 401 and not a refresh token request
     if (error.response?.status === 401 && 
         originalRequest && 

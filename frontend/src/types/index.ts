@@ -17,6 +17,19 @@ export enum Gender {
   PREFER_NOT_TO_SAY = "prefer_not_to_say"
 }
 
+// Aircraft types enum matching backend
+export enum AircraftType {
+  PLANE = "plane",
+  HELI = "heli"
+}
+
+// Load Status enum matching backend
+export enum LoadStatus {
+  FORMING = "forming",
+  ON_CALL = "on_call", 
+  DEPARTED = "departed"
+}
+
 export interface UserRoleAssignment {
   role: UserRole;
   created_at: string;
@@ -89,4 +102,79 @@ export interface PaginatedResponse<T> {
 export interface ApiError {
   detail: string;
   status_code: number;
+}
+
+// Jump Types
+export interface JumpTypeAllowedRole {
+  id: number;
+  role: UserRole;
+  created_at: string;
+}
+
+export interface JumpTypeMinimal {
+  id: number;
+  name: string;
+  short_name: string;
+}
+
+export interface AdditionalStaff {
+  id: number;
+  staff_required_role: UserRole;
+  staff_default_jump_type_id?: number;
+  staff_default_jump_type?: JumpTypeMinimal;
+  created_at: string;
+}
+
+export interface JumpType {
+  id: number;
+  name: string;
+  short_name: string;
+  description?: string;
+  exit_altitude?: number;
+  price?: number;
+  is_available: boolean;
+  allowed_roles: JumpTypeAllowedRole[];
+  additional_staff: AdditionalStaff[];
+  created_at: string;
+  updated_at?: string;
+}
+
+// Aircraft interface
+export interface Aircraft {
+  id: number;
+  name: string;
+  type: AircraftType;
+  max_load: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+// Load types
+export interface Load {
+  id: number;
+  departure: string; // ISO datetime string
+  aircraft_id: number;
+  aircraft?: Aircraft;
+  status: LoadStatus;
+  reserved_spaces: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+// Load creation and update types
+export interface CreateLoadData {
+  departure: string; // ISO datetime string
+  aircraft_id: number;
+}
+
+export interface UpdateLoadData {
+  departure?: string;
+  aircraft_id?: number;
+}
+
+export interface LoadSpacesInfo {
+  load_id: number;
+  total_spaces: number;
+  reserved_spaces: number;
+  available_spaces: number;
 }

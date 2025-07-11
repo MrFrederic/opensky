@@ -14,7 +14,7 @@ import {
 import { ArrowBack } from '@mui/icons-material';
 
 import { UserRole } from '@/types';
-import { useToast } from '@/hooks/useToast';
+import { useToastContext } from '@/components/common/ToastProvider';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { useAuthStore } from '@/stores/auth';
 import { usersService } from '@/services/users';
@@ -26,7 +26,7 @@ const AdminUserDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const toast = useToast();
+  const toast = useToastContext();
   const { user: currentUser } = useAuthStore();
 
   const targetUserId = Number(id);

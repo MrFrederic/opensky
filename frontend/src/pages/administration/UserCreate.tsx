@@ -17,7 +17,7 @@ import {
   Close as CloseIcon,
 } from '@mui/icons-material';
 
-import { useToast } from '@/hooks/useToast';
+import { useToastContext } from '@/components/common/ToastProvider';
 import { usersService } from '@/services/users';
 import { UserRole } from '@/types';
 import UserForm, { UserFormData } from '@/components/admin/UserForm';
@@ -27,7 +27,7 @@ import { validateUserForm, processFieldValue } from '@/utils/userManagement';
 const UserCreate: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const toast = useToast();
+  const toast = useToastContext();
 
   // Form state
   const [formData, setFormData] = useState<UserFormData>({

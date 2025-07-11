@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import auth, users, dictionaries, files, config
+from app.api.v1 import auth, users, dictionaries, files, config, jump_types, aircraft, loads
 
 api_router = APIRouter()
 
@@ -9,3 +9,6 @@ api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(dictionaries.router, prefix="/dictionaries", tags=["dictionaries"])
 api_router.include_router(files.router, prefix="/files", tags=["files"])
 api_router.include_router(config.router, prefix="/config", tags=["configuration"])
+api_router.include_router(jump_types.router, prefix="/jump-types", tags=["jump-types"])
+api_router.include_router(aircraft.router, prefix="/aircraft", tags=["aircraft"])
+api_router.include_router(loads.router, prefix="/loads", tags=["loads"])
