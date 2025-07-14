@@ -1,5 +1,5 @@
 import { User, UserRole } from '@/types';
-import { UserFormData } from '../components/admin/UserForm';
+import { UserFormData } from '../components/admin/user/UserForm';
 
 // Mapping of role enum values to user-friendly display names
 const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
@@ -77,9 +77,7 @@ export const validateUserForm = (formData: UserFormData, selectedRoles?: UserRol
     errors.last_name = 'Last name is required';
   }
 
-  if (formData.telegram_id !== undefined && !formData.telegram_id.trim()) {
-    errors.telegram_id = 'Telegram ID is required';
-  } else if (formData.telegram_id !== undefined && !/^\d+$/.test(formData.telegram_id)) {
+  if (formData.telegram_id !== undefined && formData.telegram_id.trim() && !/^\d+$/.test(formData.telegram_id)) {
     errors.telegram_id = 'Telegram ID must be numeric';
   }
 

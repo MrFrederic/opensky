@@ -16,6 +16,7 @@ import {
   Chip,
 } from '@mui/material';
 import { Phone, Email as Mail } from '@mui/icons-material';
+import { DateInput } from '@/components/common';
 
 import { Gender } from '@/types';
 import { useToastContext } from '@/components/common/ToastProvider';
@@ -24,6 +25,7 @@ import { authService } from '@/services/auth';
 import { AvatarUpload } from '@/components/common/AvatarUpload';
 import UnsavedChangesIndicator from '@/components/common/UnsavedChangesIndicator';
 import { processFieldValue, userToFormData } from '@/utils/userManagement';
+import { cleanUserFormData } from '@/lib/form-utils';
 
 interface ProfileFormData {
   first_name: string;
@@ -128,7 +130,7 @@ const Profile: React.FC = () => {
     try {
       setErrors({});
       
-      const dataToSave = { ...formData };
+      const dataToSave = cleanUserFormData(formData);
       
       // Include staged photo URL if available
       if (stagedPhotoUrl) {
@@ -269,16 +271,10 @@ const Profile: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              type="date"
+            <DateInput
               label="Date of Birth"
-              name="date_of_birth"
               value={formData.date_of_birth || ''}
-              onChange={handleInputChange}
-              InputLabelProps={{
-                shrink: true,
-              }}
+              onChange={(value) => handleInputChange({ target: { name: 'date_of_birth', value } } as any)}
             />
           </Grid>
 
@@ -404,16 +400,10 @@ const Profile: React.FC = () => {
         </Typography>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              type="date"
+            <DateInput
               label="Medical Clearance Date"
-              name="medical_clearance_date"
               value={formData.medical_clearance_date || ''}
-              onChange={handleInputChange}
-              InputLabelProps={{
-                shrink: true,
-              }}
+              onChange={(value) => handleInputChange({ target: { name: 'medical_clearance_date', value } } as any)}
             />
           </Grid>
           <Grid item xs={12} md={6} sx={{ display: 'flex', alignItems: 'center' }}>

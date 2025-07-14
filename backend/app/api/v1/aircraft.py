@@ -105,5 +105,5 @@ def delete_aircraft(
             detail="Aircraft not found"
         )
     
-    aircraft_crud.remove(db, id=aircraft_id)
+    aircraft_crud.remove(db, id=aircraft_id, deleted_by=admin_user.id)
     return {"message": "Aircraft deleted successfully"}

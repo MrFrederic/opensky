@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union, Union
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from app.crud.base import CRUDBase
@@ -63,14 +63,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         if created_by is not None:
             obj_in_data['created_by'] = created_by
         
-        # Convert empty strings to None for nullable fields
-        nullable_fields = [
-            'username', 'email', 'phone', 'middle_name', 'display_name', 
-            'emergency_contact_name', 'emergency_contact_phone'
-        ]
-        for field in nullable_fields:
-            if field in obj_in_data and obj_in_data[field] == '':
-                obj_in_data[field] = None
+        # Note: Empty string to None conversion is now handled automatically by Pydantic validators
         
         # Create user
         db_obj = User(**obj_in_data)
@@ -146,6 +139,43 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             db.commit()
             db.refresh(user)
         return user
+
+    def update(
+        self,
+        db: Session,
+        *,
+        db_obj: User,
+        obj_in: Union[UserUpdate, Dict[str, Any]],
+        updated_by: Optional[int] = None
+    ) -> User:
+        """Update an existing user with automatic empty string handling"""
+        # Get update data
+        if isinstance(obj_in, dict):
+            update_data = obj_in
+        else:
+            update_data = obj_in.model_dump(exclude_unset=True)
+        
+        # Note: Empty string to None conversion is now handled automatically by Pydantic validators
+        
+        # Handle roles separately if present
+        roles = update_data.pop('roles', None)
+        
+        # Update user fields
+        if updated_by is not None:
+            update_data['updated_by'] = updated_by
+            
+        for field, value in update_data.items():
+            if hasattr(db_obj, field):
+                setattr(db_obj, field, value)
+        
+        # Update roles if provided
+        if roles is not None:
+            self.update_roles(db, user=db_obj, roles=roles, updated_by=updated_by)
+        
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
 
 
 user = CRUDUser(User)

@@ -18,7 +18,7 @@ import {
   FilterList as Filter 
 } from '@mui/icons-material';
 import { dictionariesService } from '@/services/dictionaries';
-import DictionaryTable from '@/components/admin/DictionaryTable';
+import DictionaryTable from '@/components/admin/config/DictionaryTable';
 import { useToastContext } from '@/components/common/ToastProvider';
 
 const DictionaryList: React.FC = () => {

@@ -120,6 +120,13 @@ export const theme = createTheme({
         },
       },
     },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
     MuiTextField: {
       defaultProps: {
         variant: 'outlined',

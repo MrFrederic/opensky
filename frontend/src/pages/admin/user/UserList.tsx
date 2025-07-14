@@ -13,7 +13,7 @@ import {
   Paper,
   InputAdornment,
   Alert,
-  Container,
+  Container
 } from '@mui/material';
 import { 
   Add as Plus, 
@@ -21,21 +21,21 @@ import {
   FilterList as Filter
 } from '@mui/icons-material';
 import { useToastContext } from '@/components/common/ToastProvider';
-import { aircraftService } from '@/services/aircraft';
-import AircraftTable from '@/components/admin/AircraftTable';
-import { AircraftType } from '@/types';
+import { usersService } from '@/services/users';
+import UserTable from '@/components/admin/user/UserTable';
+import { UserRole } from '@/types';
 
-const AircraftList: React.FC = () => {
+const UserList: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToastContext();
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<AircraftType | ''>('');
+  const [roleFilter, setRoleFilter] = useState<UserRole | ''>('');
 
-  // Fetch aircraft query
-  const aircraftQuery = useQuery({
-    queryKey: ['aircraft', typeFilter, searchQuery],
-    queryFn: () => aircraftService.getAircraft({ 
-      aircraft_type: typeFilter || undefined,
+  // Fetch users query - now handles both search and filter
+  const usersQuery = useQuery({
+    queryKey: ['users', roleFilter, searchQuery],
+    queryFn: () => usersService.getUsers({ 
+      role: roleFilter || undefined,
       search: searchQuery && searchQuery.length >= 2 ? searchQuery : undefined,
       limit: 100 
     }),
@@ -43,26 +43,26 @@ const AircraftList: React.FC = () => {
 
   // Handle query errors with toast
   useEffect(() => {
-    if (aircraftQuery.error && aircraftQuery.error instanceof Error) {
-      toast.error(`Failed to load aircraft: ${aircraftQuery.error.message}`);
+    if (usersQuery.error && usersQuery.error instanceof Error) {
+      toast.error(`Failed to load users: ${usersQuery.error.message}`);
     }
-  }, [aircraftQuery.error]);
+  }, [usersQuery.error]);
 
-  const handleAircraftClick = (aircraftId: number) => {
-    navigate(`/admin/aircraft/${aircraftId}`);
+  const handleUserClick = (userId: number) => {
+    navigate(`/admin/users/${userId}`);
   };
 
-  const handleAddAircraft = () => {
-    navigate('/admin/aircraft/new');
+  const handleAddUser = () => {
+    navigate('/admin/users/new');
   };
 
   const handleClearSearch = () => {
     setSearchQuery('');
   };
 
-  const aircraft = aircraftQuery.data;
-  const isLoading = aircraftQuery.isLoading;
-  const error = aircraftQuery.error;
+  const users = usersQuery.data;
+  const isLoading = usersQuery.isLoading;
+  const error = usersQuery.error;
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -71,30 +71,30 @@ const AircraftList: React.FC = () => {
           <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
             <Box>
               <Typography variant="h3" component="h1" gutterBottom>
-                Aircraft Management
+                User Management
               </Typography>
               <Typography variant="body1" color="text.secondary">
-                Manage aircraft fleet and capacity
+                Manage system users, roles, and permissions
               </Typography>
             </Box>
             <Button
               variant="contained"
               startIcon={<Plus />}
-              onClick={handleAddAircraft}
+              onClick={handleAddUser}
               sx={{ mt: 1 }}
             >
-              Add Aircraft
+              Add User
             </Button>
           </Box>
         </Box>
 
         {/* Search and Filter */}
         <Paper sx={{ p: 3, mb: 3 }}>
-          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2} mb={2}>
+          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2}>
             {/* Search */}
             <TextField
               fullWidth
-              placeholder="Search aircraft by name..."
+              placeholder="Search users by name or username..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
@@ -118,18 +118,23 @@ const AircraftList: React.FC = () => {
               sx={{ flexGrow: 1 }}
             />
 
-            {/* Type Filter */}
+            {/* Role Filter */}
             <FormControl sx={{ minWidth: 200 }}>
-              <InputLabel>Aircraft Type</InputLabel>
+              <InputLabel>Role Filter</InputLabel>
               <Select
-                value={typeFilter}
-                label="Aircraft Type"
-                onChange={(e) => setTypeFilter(e.target.value as AircraftType | '')}
+                value={roleFilter}
+                label="Role Filter"
+                onChange={(e) => setRoleFilter(e.target.value as UserRole | '')}
                 startAdornment={<Filter sx={{ mr: 1, color: 'action.disabled' }} />}
               >
-                <MenuItem value="">All Types</MenuItem>
-                <MenuItem value={AircraftType.PLANE}>Plane</MenuItem>
-                <MenuItem value={AircraftType.HELI}>Helicopter</MenuItem>
+                <MenuItem value="">All Roles</MenuItem>
+                <MenuItem value={UserRole.TANDEM_JUMPER}>Tandem Jumper</MenuItem>
+                <MenuItem value={UserRole.AFF_STUDENT}>AFF Student</MenuItem>
+                <MenuItem value={UserRole.SPORT_PAID}>Sport Paid</MenuItem>
+                <MenuItem value={UserRole.SPORT_FREE}>Sport Free</MenuItem>
+                <MenuItem value={UserRole.TANDEM_INSTRUCTOR}>Tandem Instructor</MenuItem>
+                <MenuItem value={UserRole.AFF_INSTRUCTOR}>AFF Instructor</MenuItem>
+                <MenuItem value={UserRole.ADMINISTRATOR}>Administrator</MenuItem>
               </Select>
             </FormControl>
           </Box>
@@ -145,23 +150,23 @@ const AircraftList: React.FC = () => {
         {/* Error State */}
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
-            Error loading aircraft: {error instanceof Error ? error.message : 'Unknown error'}
+            Error loading users: {error instanceof Error ? error.message : 'Unknown error'}
           </Alert>
         )}
 
-        {/* Aircraft Table */}
-        <AircraftTable
-          aircraft={aircraft || []}
-          onAircraftClick={handleAircraftClick}
+        {/* Users Table */}
+        <UserTable
+          users={users || []}
+          onUserClick={handleUserClick}
           loading={isLoading}
         />
 
         {/* Results Info */}
-        {aircraft && aircraft.length > 0 && (
+        {users && users.length > 0 && (
           <Box textAlign="center" mt={2}>
             <Typography variant="body2" color="text.secondary">
-              Showing {aircraft.length} aircraft
-              {typeFilter && ` of type: ${typeFilter}`}
+              Showing {users.length} user{users.length !== 1 ? 's' : ''}
+              {roleFilter && ` with role: ${roleFilter}`}
             </Typography>
           </Box>
         )}
@@ -169,4 +174,4 @@ const AircraftList: React.FC = () => {
   );
 };
 
-export default AircraftList;
+export default UserList;

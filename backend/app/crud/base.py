@@ -1,4 +1,5 @@
 from typing import Generic, TypeVar, Type, List, Optional, Union, Dict, Any
+from datetime import datetime
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import asc, desc
@@ -16,9 +17,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
-    def get(self, db: Session, id: Any) -> Optional[ModelType]:
+    def get(self, db: Session, id: Any, include_deleted: bool = False) -> Optional[ModelType]:
         """Get a single record by id"""
-        return db.query(self.model).filter(self.model.id == id).first()
+        query = db.query(self.model).filter(self.model.id == id)
+        if not include_deleted and hasattr(self.model, 'deleted_at'):
+            query = query.filter(self.model.deleted_at.is_(None))
+        return query.first()
 
     def get_multi(
         self, 
@@ -27,10 +31,15 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         skip: int = 0, 
         limit: int = 100,
         order_by: Optional[str] = None,
-        desc_order: bool = False
+        desc_order: bool = False,
+        include_deleted: bool = False
     ) -> List[ModelType]:
         """Get multiple records with pagination and ordering"""
         query = db.query(self.model)
+        
+        # Exclude soft-deleted records by default
+        if not include_deleted and hasattr(self.model, 'deleted_at'):
+            query = query.filter(self.model.deleted_at.is_(None))
         
         if order_by and hasattr(self.model, order_by):
             order_column = getattr(self.model, order_by)
@@ -78,9 +87,40 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.refresh(db_obj)
         return db_obj
 
-    def remove(self, db: Session, *, id: int) -> ModelType:
+    def remove(self, db: Session, *, id: int, deleted_by: Optional[int] = None) -> ModelType:
         """Delete a record"""
         obj = db.query(self.model).get(id)
         db.delete(obj)
         db.commit()
+        return obj
+
+    def soft_delete(self, db: Session, *, id: int, deleted_by: Optional[int] = None) -> Optional[ModelType]:
+        """Soft delete a record by setting deleted_at timestamp"""
+        obj = self.get(db, id=id, include_deleted=False)
+        if not obj:
+            return None
+            
+        if hasattr(obj, 'deleted_at'):
+            obj.deleted_at = datetime.utcnow()
+            if deleted_by is not None and hasattr(obj, 'deleted_by'):
+                obj.deleted_by = deleted_by
+            db.add(obj)
+            db.commit()
+            db.refresh(obj)
+            return obj
+        return None
+
+    def restore(self, db: Session, *, id: int) -> ModelType:
+        """Restore a soft-deleted record by clearing deleted_at timestamp"""
+        obj = self.get(db, id=id, include_deleted=True)
+        if not obj:
+            return None
+            
+        if hasattr(obj, 'deleted_at'):
+            obj.deleted_at = None
+            if hasattr(obj, 'deleted_by'):
+                obj.deleted_by = None
+            db.add(obj)
+            db.commit()
+            db.refresh(obj)
         return obj

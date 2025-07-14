@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
+from fastapi import HTTPException
 from app.crud.base import CRUDBase
 from app.models.jump_types import JumpType, JumpTypeAllowedRole, AdditionalStaff
 from app.models.enums import UserRole
@@ -11,17 +12,21 @@ logger = logging.getLogger(__name__)
 
 
 class CRUDJumpType(CRUDBase[JumpType, JumpTypeCreate, JumpTypeUpdate]):
-    def get(self, db: Session, id: int) -> Optional[JumpType]:
+    def get(self, db: Session, id: int, include_deleted: bool = False) -> Optional[JumpType]:
         """Get jump type by id with allowed roles and additional staff loaded"""
-        return (
+        query = (
             db.query(JumpType)
             .options(
                 joinedload(JumpType.allowed_roles), 
                 joinedload(JumpType.additional_staff).joinedload(AdditionalStaff.staff_default_jump_type)
             )
             .filter(JumpType.id == id)
-            .first()
         )
+        
+        if not include_deleted:
+            query = query.filter(JumpType.deleted_at.is_(None))
+            
+        return query.first()
 
     def get_jump_types(
         self,
@@ -29,13 +34,18 @@ class CRUDJumpType(CRUDBase[JumpType, JumpTypeCreate, JumpTypeUpdate]):
         *,
         filters: Optional[Dict[str, Any]] = None,
         skip: int = 0,
-        limit: int = 100
+        limit: int = 100,
+        include_deleted: bool = False
     ) -> List[JumpType]:
         """Get jump types with flexible filters - supports combining multiple parameters"""
         query = db.query(JumpType).options(
             joinedload(JumpType.allowed_roles), 
             joinedload(JumpType.additional_staff).joinedload(AdditionalStaff.staff_default_jump_type)
         )
+        
+        # Exclude soft-deleted records by default
+        if not include_deleted:
+            query = query.filter(JumpType.deleted_at.is_(None))
         
         if not filters:
             return query.offset(skip).limit(limit).all()
@@ -165,6 +175,45 @@ class CRUDJumpType(CRUDBase[JumpType, JumpTypeCreate, JumpTypeUpdate]):
             )
         
         return db_obj
+
+    def has_linked_objects(self, db: Session, *, jump_type_id: int) -> bool:
+        """Check if jump type has linked jumps or is used as default in additional staff"""
+        from app.models.jumps import Jump
+        
+        # Check for linked jumps
+        linked_jumps_count = db.query(Jump).filter(Jump.jump_type_id == jump_type_id).count()
+        if linked_jumps_count > 0:
+            return True
+            
+        # Check if used as default jump type in additional staff
+        linked_additional_staff_count = db.query(AdditionalStaff).filter(
+            AdditionalStaff.staff_default_jump_type_id == jump_type_id
+        ).count()
+        
+        return linked_additional_staff_count > 0
+
+    def remove(self, db: Session, *, id: int, deleted_by: Optional[int] = None) -> JumpType:
+        """Delete jump type - use soft delete if linked objects exist, hard delete otherwise"""
+        jump_type = self.get(db, id=id, include_deleted=False)
+        if not jump_type:
+            raise HTTPException(status_code=404, detail="Jump type not found")
+        
+        # Check for linked objects FIRST, before any deletion attempt
+        has_links = self.has_linked_objects(db, jump_type_id=id)
+        
+        if has_links:
+            # Soft delete if there are linked objects
+            result = self.soft_delete(db, id=id, deleted_by=deleted_by)
+            if result:
+                return result  # Return the soft-deleted object for consistency
+            else:
+                raise HTTPException(status_code=500, detail="Failed to soft delete jump type")
+        else:
+            # Hard delete if no linked objects (this will also delete allowed roles and additional staff due to cascade)
+            try:
+                return super().remove(db, id=id)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Failed to delete jump type: {str(e)}")
 
 
 jump_type = CRUDJumpType(JumpType)

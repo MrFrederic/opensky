@@ -70,8 +70,8 @@ const Header: React.FC = () => {
           DZM
         </Typography>
 
-        {/* Navigation - Desktop */}
-        <Box sx={{ display: 'flex', gap: 2, flexGrow: 1 }}>
+        {/* Navigation */}
+        <Box sx={{ display: 'flex', gap: 2, flexGrow: 1}}>
           <Button component={Link} to="/" color="inherit">
             Home
           </Button>
@@ -81,6 +81,13 @@ const Header: React.FC = () => {
               <AdminOnly>
                 <Button component={Link} to="/manifesting" color="inherit">
                   Manifesting
+                </Button>
+              </AdminOnly>
+
+              {/* Users Link */}
+              <AdminOnly>
+                <Button component={Link} to="/admin/users" color="inherit">
+                  Users
                 </Button>
               </AdminOnly>
 
@@ -98,14 +105,11 @@ const Header: React.FC = () => {
                   open={Boolean(adminMenuAnchor)}
                   onClose={handleAdminMenuClose}
                 >
-                  <MenuItem component={Link} to="/admin/users" onClick={handleAdminMenuClose}>
-                    Users
-                  </MenuItem>
                   <MenuItem component={Link} to="/admin/jump-types" onClick={handleAdminMenuClose}>
                     Jump Types
                   </MenuItem>
                   <MenuItem component={Link} to="/admin/aircraft" onClick={handleAdminMenuClose}>
-                    Aircraft
+                    Aircrafts
                   </MenuItem>
                   <MenuItem component={Link} to="/admin/dictionaries" onClick={handleAdminMenuClose}>
                     Dictionaries

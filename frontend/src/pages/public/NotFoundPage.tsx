@@ -26,11 +26,28 @@ export default function NotFoundPage() {
           >
             404
           </Typography>
-          <Typography variant="h4" component="h2" gutterBottom fontWeight="semibold">
+          <Typography 
+            variant="h4" 
+            component="h2" 
+            gutterBottom 
+            fontWeight="semibold"
+            sx={{ fontStyle: 'italic' }}
+          >
             Page Not Found
           </Typography>
+          
+          <Typography color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
+            "Well, this is rather awkward..."
+          </Typography>
+          
           <Typography color="text.secondary" sx={{ mb: 4 }}>
-            Sorry, the page you are looking for doesn't exist or has been moved.
+            It appears this page has gone for a bit of a skydive without telling anyone. 
+            Rather poor form, if you ask us. We've sent out a search party, but they're 
+            currently distracted by tea and biscuits.
+          </Typography>
+          
+          <Typography color="text.secondary" sx={{ mb: 4, fontWeight: 'medium' }}>
+            Might we suggest:
           </Typography>
           
           <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }} justifyContent="center">
@@ -42,7 +59,7 @@ export default function NotFoundPage() {
               size="large"
               sx={{ width: { xs: '100%', sm: 'auto' } }}
             >
-              Go to Homepage
+              Return to Base (Safely)
             </Button>
             <Button
               onClick={() => window.history.back()}
@@ -51,9 +68,20 @@ export default function NotFoundPage() {
               size="large"
               sx={{ width: { xs: '100%', sm: 'auto' } }}
             >
-              Go Back
+              Attempt Recovery
             </Button>
           </Stack>
+          
+          <Typography 
+            color="text.disabled" 
+            sx={{ 
+              mt: 4,
+              fontSize: '0.75rem',
+              fontStyle: 'italic'
+            }}
+          >
+            Note: If this were an actual skydiver, we'd be ever so slightly more concerned.
+          </Typography>
         </Box>
       </Container>
     </Box>

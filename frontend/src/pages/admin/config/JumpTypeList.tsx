@@ -22,7 +22,7 @@ import {
 } from '@mui/icons-material';
 import { useToastContext } from '@/components/common/ToastProvider';
 import { jumpTypesService } from '@/services/jump-types';
-import JumpTypeTable from '@/components/admin/JumpTypeTable';
+import JumpTypeTable from '@/components/admin/config/JumpTypeTable';
 import { UserRole } from '@/types';
 
 const JumpTypeList: React.FC = () => {
@@ -92,7 +92,7 @@ const JumpTypeList: React.FC = () => {
 
         {/* Search and Filter */}
         <Paper sx={{ p: 3, mb: 3 }}>
-          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2} mb={2}>
+          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2}>
             {/* Search */}
             <TextField
               fullWidth

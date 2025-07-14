@@ -189,15 +189,11 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
         <Typography variant="caption" color="text.secondary" textAlign="center">
           {stagedPhotoUrl ? (
             <>
-              <strong>New photo ready!</strong>
-              <br />
-              Click Save to update your profile
+              Click Save to update your avatar
             </>
           ) : (
             <>
-              Click the camera icon to upload a new photo
-              <br />
-              Max size: 10MB • Formats: JPG, PNG, GIF, WebP
+              Max size: 10MB
             </>
           )}
         </Typography>

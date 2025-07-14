@@ -25,7 +25,7 @@ const HomePage: React.FC = () => {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ bgcolor: 'background.default' }}>
       <Container maxWidth="lg" sx={{ py: 8 }}>
         <Box sx={{ textAlign: 'center' }}>
           <Typography variant="h2" component="h1" gutterBottom fontWeight="bold">

@@ -14,10 +14,12 @@ import {
   InputLabel,
   Button,
   Paper,
+  Alert,
 } from '@mui/material';
-import { Phone, Email as Mail, Tag as Hash, Security as Shield, Check } from '@mui/icons-material';
+import { Phone, Email as Mail, Security as Shield, Check, Save as SaveIcon } from '@mui/icons-material';
 import { UserRole, Gender } from '@/types';
 import { getRoleDisplayName } from '@/utils/userManagement';
+import { DateInput } from '@/components/common';
 
 export interface UserFormData {
   first_name: string;
@@ -46,11 +48,11 @@ interface UserFormProps {
   showAdminFields?: boolean;
   hasUnsavedChanges?: boolean;
   isSaving?: boolean;
+  isCreating?: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRoleToggle?: (role: UserRole) => void;
-  onPhotoUpload?: (file: File) => Promise<void>;
-  isPhotoUploading?: boolean;
   onSave?: () => void;
+  onCancel?: () => void;
 }
 
 // Role labels are now handled by getRoleDisplayName from userManagement utils
@@ -63,14 +65,27 @@ const UserForm: React.FC<UserFormProps> = ({
   showAdminFields = true,
   hasUnsavedChanges = false,
   isSaving = false,
+  isCreating = false,
   onInputChange,
   onRoleToggle,
   onSave,
+  onCancel,
 }) => {
   return (
-    <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3 }}>
-      {/* Save Button - Fixed at top right */}
-      {onSave && (
+    <>
+      {/* Creation Mode: Warning Message */}
+      {isCreating && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          <Typography variant="body2">
+            <strong>Manual User Creation</strong> - This is not the standard user registration flow. 
+            Users typically join through Telegram authentication. Please proceed with caution.
+          </Typography>
+        </Alert>
+      )}
+
+      <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3 }}>
+        {/* Edit Mode: Save Button at top */}
+      {!isCreating && onSave && (
         <Box sx={{ mb: 3, pb: 2, borderBottom: 1, borderColor: 'divider', flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
           <Button
             variant="contained"
@@ -139,18 +154,12 @@ const UserForm: React.FC<UserFormProps> = ({
           </Grid>
 
           <Grid item xs={12} sm={6} lg={4}>
-            <TextField
-              fullWidth
-              type="date"
+            <DateInput
               label="Date of Birth"
-              name="date_of_birth"
               value={formData.date_of_birth || ''}
-              onChange={onInputChange}
+              onChange={(value) => onInputChange({ target: { name: 'date_of_birth', value } } as any)}
               error={!!errors.date_of_birth}
               helperText={errors.date_of_birth}
-              InputLabelProps={{
-                shrink: true,
-              }}
             />
           </Grid>
 
@@ -179,14 +188,13 @@ const UserForm: React.FC<UserFormProps> = ({
             <Grid item xs={12} sm={6} lg={4}>
               <TextField
                 fullWidth
-                required
                 label="Telegram ID"
                 name="telegram_id"
                 value={formData.telegram_id}
                 onChange={onInputChange}
                 placeholder="e.g., 123456789"
                 error={!!errors.telegram_id}
-                helperText={errors.telegram_id || "Numeric Telegram user ID (not the username)"}
+                helperText={errors.telegram_id || "Numeric Telegram user ID (not the username) - optional for manual creation"}
               />
             </Grid>
           )}
@@ -194,19 +202,12 @@ const UserForm: React.FC<UserFormProps> = ({
           <Grid item xs={12} sm={6} lg={4}>
             <TextField
               fullWidth
-              label="Username"
+              label="Telegram Username"
               name="username"
               value={formData.username ? `@${formData.username}` : ''}
               onChange={onInputChange}
               placeholder="@username"
               helperText="Telegram username (stored without @)"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Hash />
-                  </InputAdornment>
-                ),
-              }}
             />
           </Grid>
 
@@ -300,18 +301,12 @@ const UserForm: React.FC<UserFormProps> = ({
               </Grid>
 
               <Grid item xs={12} sm={6} lg={4}>
-                <TextField
-                  fullWidth
-                  type="date"
+                <DateInput
                   label="Medical Clearance Date"
-                  name="medical_clearance_date"
                   value={formData.medical_clearance_date || ''}
-                  onChange={onInputChange}
+                  onChange={(value) => onInputChange({ target: { name: 'medical_clearance_date', value } } as any)}
                   error={!!errors.medical_clearance_date}
                   helperText={errors.medical_clearance_date}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
                 />
               </Grid>
 
@@ -377,8 +372,33 @@ const UserForm: React.FC<UserFormProps> = ({
             </FormControl>
           </Box>
         )}
+
+        {/* Creation Mode: Action Buttons */}
+        {isCreating && onSave && (
+          <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 3, mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            {onCancel && (
+              <Button
+                variant="outlined"
+                onClick={onCancel}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+            )}
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<SaveIcon />}
+              onClick={onSave}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Creating...' : 'Create User'}
+            </Button>
+          </Box>
+        )}
       </Box>
     </Paper>
+    </>
   );
 };
 

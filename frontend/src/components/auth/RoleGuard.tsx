@@ -15,7 +15,7 @@ import { useAuthStore } from '@/stores/auth';
 import { UserRole } from '@/types';
 import { hasRole, hasAnyRole, hasAllRoles, hasPermission, ROLE_PERMISSIONS } from '@/lib/rbac';
 import LoginModal from './LoginModal';
-import NotFoundPage from '@/pages/NotFoundPage';
+import NotFoundPage from '@/pages/public/NotFoundPage';
 
 interface RoleGuardProps {
   children: React.ReactNode;

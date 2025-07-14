@@ -1,18 +1,17 @@
 import { createBrowserRouter } from 'react-router-dom';
 import RootLayout from '@/components/layouts/RootLayout';
-import HomePage from '@/pages/HomePage';
-import NotFoundPage from '@/pages/NotFoundPage';
+import HomePage from '@/pages/public/HomePage';
+import NotFoundPage from '@/pages/public/NotFoundPage';
 import Profile from '@/pages/Profile';
-import UserList from '@/pages/administration/UserList';
-import AdminUserDetails from '@/pages/administration/AdminUserDetails';
-import UserCreate from '@/pages/administration/UserCreate';
-import DictionaryList from '@/pages/administration/DictionaryList';
-import DictionaryEdit from '@/pages/administration/DictionaryEdit';
-import JumpTypeList from '@/pages/administration/JumpTypeList';
-import JumpTypeEdit from '@/pages/administration/JumpTypeEdit';
-import AircraftList from '@/pages/administration/AircraftList';
-import AircraftEdit from '@/pages/administration/AircraftEdit';
-import ManifestingPage from '@/pages/administration/ManifestingPage';
+import UserList from '@/pages/admin/user/UserList';
+import AdminUserDetails from '@/pages/admin/user/UserEdit';
+import DictionaryList from '@/pages/admin/config/DictionaryList';
+import DictionaryEdit from '@/pages/admin/config/DictionaryEdit';
+import JumpTypeList from '@/pages/admin/config/JumpTypeList';
+import JumpTypeEdit from '@/pages/admin/config/JumpTypeEdit';
+import AircraftList from '@/pages/admin/config/AircraftList';
+import AircraftEdit from '@/pages/admin/config/AircraftEdit';
+import ManifestingPage from '@/pages/admin/ManifestingPage';
 import { AdminOnly } from '@/components/auth/RoleGuard';
 
 export const router = createBrowserRouter([
@@ -23,7 +22,6 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
-        handle: { hideHeader: true },
       },
       {
         path: 'admin/users',
@@ -31,7 +29,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'admin/users/new',
-        element: <AdminOnly><UserCreate /></AdminOnly>,
+        element: <AdminOnly><AdminUserDetails /></AdminOnly>,
       },
       {
         path: 'admin/users/:id',
@@ -76,6 +74,7 @@ export const router = createBrowserRouter([
       {
         path: 'manifesting',
         element: <AdminOnly><ManifestingPage /></AdminOnly>,
+        handle: { hideHeader: true },
       },
       {
         path: '*',

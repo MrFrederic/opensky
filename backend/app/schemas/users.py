@@ -2,13 +2,14 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime, date
 from app.models.enums import UserRole, Gender
+from app.core.validators import EmptyStrToNoneMixin
 
 
 # =============================================================================
 # USER CORE SCHEMAS
 # =============================================================================
 
-class UserBase(BaseModel):
+class UserBase(BaseModel, EmptyStrToNoneMixin):
     """Base user model with common fields"""
     first_name: str
     middle_name: Optional[str] = None
@@ -41,12 +42,12 @@ class UserRoleResponse(BaseModel):
 
 class UserCreate(UserBase):
     """Schema for creating a new user"""
-    telegram_id: str
+    telegram_id: Optional[str] = None
     roles: Optional[List[UserRole]] = None
     photo_url: Optional[str] = None
 
 
-class UserUpdate(BaseModel):
+class UserUpdate(BaseModel, EmptyStrToNoneMixin):
     """Schema for updating user information (all fields optional)"""
     first_name: Optional[str] = None
     middle_name: Optional[str] = None
@@ -71,7 +72,7 @@ class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
     
     id: int
-    telegram_id: str
+    telegram_id: Optional[str] = None
     roles: List[UserRoleResponse] = []
     created_at: datetime
     updated_at: Optional[datetime] = None

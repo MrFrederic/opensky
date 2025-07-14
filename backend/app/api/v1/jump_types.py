@@ -108,5 +108,5 @@ def delete_jump_type(
             detail="Jump type not found"
         )
     
-    jump_type_crud.remove(db, id=jump_type_id)
+    jump_type_crud.remove(db, id=jump_type_id, deleted_by=admin_user.id)
     return {"message": "Jump type deleted successfully"}

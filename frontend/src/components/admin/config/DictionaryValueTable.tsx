@@ -26,6 +26,7 @@ import {
   LocalOffer
 } from '@mui/icons-material';
 import { DictionaryValue } from '@/types';
+import { formatDateConsistent } from '@/lib/utils';
 
 interface DictionaryValueTableProps {
   values: DictionaryValue[];
@@ -48,10 +49,6 @@ const DictionaryValueTable: React.FC<DictionaryValueTableProps> = ({
   const [addValue, setAddValue] = useState('');
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString();
-  };
 
   const handleEdit = (id: number, value: string) => {
     setEditingId(id);
@@ -290,12 +287,12 @@ const DictionaryValueTable: React.FC<DictionaryValueTableProps> = ({
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2">
-                    {formatDate(value.created_at)}
+                    {formatDateConsistent(value.created_at)}
                   </Typography>
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2">
-                    {formatDate(value.updated_at)}
+                    {formatDateConsistent(value.updated_at)}
                   </Typography>
                 </TableCell>
                 <TableCell>

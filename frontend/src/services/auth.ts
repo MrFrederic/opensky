@@ -30,6 +30,7 @@ export interface UpdateCurrentUserData {
   emergency_contact_phone?: string;
   gender?: Gender;
   photo_url?: string;
+  medical_clearance_date?: string; // ISO date string
 }
 
 export const authService = {

@@ -23,7 +23,7 @@ import {
   Storage as Database 
 } from '@mui/icons-material';
 import { dictionariesService } from '@/services/dictionaries';
-import DictionaryValueTable from '@/components/admin/DictionaryValueTable';
+import DictionaryValueTable from '@/components/admin/config/DictionaryValueTable';
 import { useToastContext } from '@/components/common/ToastProvider';
 
 const DictionaryEdit: React.FC = () => {

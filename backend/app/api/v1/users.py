@@ -36,7 +36,8 @@ def update_current_user(
     allowed_fields = {
         "first_name", "middle_name", "last_name", "display_name", 
         "username", "email", "phone", "date_of_birth", 
-        "emergency_contact_name", "emergency_contact_phone", "gender", "photo_url"
+        "emergency_contact_name", "emergency_contact_phone", "gender", "photo_url",
+        "medical_clearance_date"  # Allow users to update their medical clearance date
     }
     update_data = {k: v for k, v in user_update.model_dump(exclude_unset=True).items() if k in allowed_fields}
     
@@ -83,13 +84,14 @@ def create_user(
     admin_user: User = Depends(get_admin_user)
 ):
     """Create a new user (admin only)"""
-    # Check if user with same telegram_id already exists
-    existing_user = user_crud.get_users(db, filters={"telegram_id": user_create.telegram_id})
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User with this Telegram ID already exists"
-        )
+    # Check if user with same telegram_id already exists (only if telegram_id is provided)
+    if user_create.telegram_id and user_create.telegram_id.strip():
+        existing_user = user_crud.get_users(db, filters={"telegram_id": user_create.telegram_id})
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User with this Telegram ID already exists"
+            )
     # Check if username is provided and already exists
     if user_create.username and user_create.username.strip():
         existing_username = user_crud.get_users(db, filters={"username": user_create.username})

@@ -8,10 +8,10 @@ export function formatDate(date: Date | string): string {
   if (typeof date === 'string') {
     date = new Date(date);
   }
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString('de-DE', {
     year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
   });
 }
 
@@ -19,12 +19,24 @@ export function formatDateTime(date: Date | string): string {
   if (typeof date === 'string') {
     date = new Date(date);
   }
-  return date.toLocaleString('en-US', {
+  return date.toLocaleString('de-DE', {
     year: 'numeric',
-    month: 'short',
-    day: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
+  });
+}
+
+/**
+ * Formats a date consistently in dd.mm.yyyy format
+ * Use this function throughout the app for consistent date display
+ */
+export function formatDateConsistent(dateString: string): string {
+  return new Date(dateString).toLocaleDateString('de-DE', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
   });
 }
 

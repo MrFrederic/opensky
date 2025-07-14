@@ -38,7 +38,7 @@ export interface UserRoleAssignment {
 // User and authentication types
 export interface User {
   id: number;
-  telegram_id: string;
+  telegram_id?: string;
   first_name: string;
   middle_name?: string;
   last_name: string;

@@ -18,8 +18,10 @@ class JumpType(Base):
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    deleted_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     
     # Relationships
     allowed_roles = relationship("JumpTypeAllowedRole", foreign_keys="JumpTypeAllowedRole.jump_type_id", back_populates="jump_type", cascade="all, delete-orphan")

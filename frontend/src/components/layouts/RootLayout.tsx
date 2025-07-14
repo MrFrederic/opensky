@@ -34,17 +34,27 @@ const RootLayout: React.FC = () => {
       }}
       onMouseMove={hideHeader ? handleMouseMove : undefined}
     >
+      {/* Default Header */}
       {!hideHeader && (
         <Box sx={{ }}>
           <Header />
         </Box>
       )}
+      
+      {/* Drawer for header when hidden */}
       {hideHeader && (
         <Drawer
           anchor="top"
           open={drawerOpen}
           onClose={handleDrawerClose}
-          PaperProps={{ sx: { background: 'transparent', boxShadow: 'none', pointerEvents: 'none' } }}
+          PaperProps={{
+            sx: {
+              background: 'transparent',
+              boxShadow: 'none',
+              pointerEvents: 'none',
+              borderRadius: 0,
+            }
+          }}
           ModalProps={{ keepMounted: true }}
         >
           <Box sx={{ pointerEvents: 'auto' }} onMouseLeave={handleDrawerClose}>
@@ -52,6 +62,7 @@ const RootLayout: React.FC = () => {
           </Box>
         </Drawer>
       )}
+
       <Box
         component="main"
         sx={{
@@ -63,8 +74,9 @@ const RootLayout: React.FC = () => {
         }}
       >
         <Outlet />
-        <Footer />
       </Box>
+
+      <Footer />
     </Box>
   );
 };

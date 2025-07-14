@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { Delete, ErrorOutline as AlertTriangle } from '@mui/icons-material';
 import { User } from '@/types';
+import { formatDateConsistent } from '@/lib/utils';
 import { AvatarUpload } from '@/components/common/AvatarUpload';
 import { getRoleDisplayName } from '@/utils/userManagement';
 
@@ -52,8 +53,8 @@ const UserInfoCard: React.FC<UserInfoCardProps> = ({
       <Paper sx={{ p: 3, height: 'fit-content' }}>
         {/* Avatar */}
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-          <AvatarUpload 
-            user={user} 
+          <AvatarUpload
+            user={user}
             size={100}
             editable={true}
             stagedPhotoUrl={stagedPhotoUrl}
@@ -88,12 +89,12 @@ const UserInfoCard: React.FC<UserInfoCardProps> = ({
             </Typography>
             <Box display="flex" gap={1} flexWrap="wrap">
               {user.roles.map((r) => (
-                <Chip 
-                  key={r.role} 
-                  label={getRoleDisplayName(r.role)} 
-                  size="small" 
-                  color="primary" 
-                  variant="outlined" 
+                <Chip
+                  key={r.role}
+                  label={getRoleDisplayName(r.role)}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
                 />
               ))}
             </Box>
@@ -103,38 +104,39 @@ const UserInfoCard: React.FC<UserInfoCardProps> = ({
         {/* Status */}
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            Status: {user.is_active ? 
-              <Chip label="Active" color="success" size="small" /> : 
+            Status: {user.is_active ?
+              <Chip label="Active" color="success" size="small" /> :
               <Chip label="Inactive" color="error" size="small" />
             }
           </Typography>
-          {user.medical_clearance_is_confirmed && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Medical: <Chip label="Cleared" color="success" size="small" />
-            </Typography>
-          )}
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Medical: {user.medical_clearance_is_confirmed ?
+              <Chip label="Cleared" color="success" size="small" /> :
+              <Chip label="Not Cleared" color="error" size="small" />
+            }
+          </Typography>
         </Box>
 
         {/* System Info */}
         <Divider sx={{ my: 2 }} />
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            <strong>Created:</strong> {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+            <strong>Created:</strong> {user.created_at ? formatDateConsistent(user.created_at) : 'N/A'}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            <strong>Updated:</strong> {user.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'N/A'}
+            <strong>Updated:</strong> {user.updated_at ? formatDateConsistent(user.updated_at) : 'N/A'}
           </Typography>
         </Box>
 
         {/* Delete Button */}
         {canDelete && (
           <Box sx={{ mt: 2 }}>
-            <Button 
-              variant="outlined" 
-              color="error" 
+            <Button
+              variant="outlined"
+              color="error"
               size="small"
               fullWidth
-              startIcon={<Delete />} 
+              startIcon={<Delete />}
               onClick={handleDeleteClick}
               disabled={isDeleting}
             >

@@ -20,7 +20,7 @@ export interface CreateUserData {
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
   gender?: Gender;
-  telegram_id: string;
+  telegram_id?: string;
   roles?: UserRole[];
   photo_url?: string;
   medical_clearance_date?: string; // ISO date string

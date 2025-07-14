@@ -14,9 +14,9 @@ import {
 } from '@mui/material';
 import { ChevronRight } from '@mui/icons-material';
 import { User as UserType } from '@/types';
-import { formatUserRoles } from '@/lib/utils';
+import { formatUserRoles, formatDateConsistent } from '@/lib/utils';
 import { getUserRoles } from '@/lib/rbac';
-import User from '../common/User';
+import User from '@/components/common/User';
 
 interface UserTableProps {
   users: UserType[];
@@ -36,9 +36,7 @@ const UserTable: React.FC<UserTableProps> = ({ users, onUserClick, loading = fal
     return roleString;
   };
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString();
-  };
+  // Use the consistent date formatter from utils instead of local function
 
   if (loading) {
     return (
@@ -148,7 +146,7 @@ const UserTable: React.FC<UserTableProps> = ({ users, onUserClick, loading = fal
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2" color="text.secondary">
-                    {formatDate(user.created_at)}
+                    {formatDateConsistent(user.created_at)}
                   </Typography>
                 </TableCell>
                 <TableCell>

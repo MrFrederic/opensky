@@ -12,6 +12,7 @@ import {
   Skeleton,
 } from '@mui/material';
 import { Aircraft, AircraftType } from '@/types';
+import { formatDateConsistent } from '@/lib/utils';
 
 interface AircraftTableProps {
   aircraft: Aircraft[];
@@ -116,7 +117,7 @@ const AircraftTable: React.FC<AircraftTableProps> = ({
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2" color="text.secondary">
-                    {new Date(aircraftItem.created_at).toLocaleDateString()}
+                    {formatDateConsistent(aircraftItem.created_at)}
                   </Typography>
                 </TableCell>
               </TableRow>

@@ -41,7 +41,7 @@ const Footer: React.FC = () => {
         </Typography>
         {/* Right: License */}
         <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-          <a href="/LICENSE" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
+          <a href="https://github.com/MrFrederic/dropzone-management-system/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
             MIT License
           </a>
         </Typography>
