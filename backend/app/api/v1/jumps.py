@@ -10,11 +10,101 @@ from app.schemas.jumps import (
     JumpUpdate, 
     JumpLoadAssignment,
     JumpLoadAssignmentResponse,
-    JumpLoadRemovalResponse
+    JumpLoadRemovalResponse,
+    LogbookResponse,
+    LogbookJumpEntry
 )
 from app.models.users import User
 
 router = APIRouter()
+
+
+#=========================#
+#                         #
+#   Logbook Endpoints     #
+#                         #
+#=========================#
+
+@router.get("/logbook", response_model=LogbookResponse)
+def get_my_logbook(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    jump_type_ids: Optional[List[int]] = Query(None, description="Filter by jump type IDs"),
+    aircraft_ids: Optional[List[int]] = Query(None, description="Filter by aircraft IDs"),
+    is_manifested: Optional[bool] = Query(None, description="Filter by manifestation status"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get current user's jump logbook"""
+    filters = {
+        'jump_type_ids': jump_type_ids,
+        'aircraft_ids': aircraft_ids,
+    }
+    
+    jumps = jump_crud.get_logbook_jumps(
+        db, user_id=current_user.id, filters=filters
+    )
+    
+    logbook_entries = []
+    for jump in jumps:
+        aircraft_name = None
+        if jump.load and jump.load.aircraft:
+            aircraft_name = jump.load.aircraft.name
+            
+        entry = LogbookJumpEntry(
+            id=jump.id,
+            jump_date=jump.jump_date,
+            jump_type_name=jump.jump_type.name,
+            jump_type_short_name=jump.jump_type.short_name,
+            aircraft_name=aircraft_name,
+            comment=jump.comment
+        )
+        logbook_entries.append(entry)
+    
+    return LogbookResponse(
+        jumps=logbook_entries
+    )
+
+
+@router.get("/logbook/{user_id}", response_model=LogbookResponse)
+def get_user_logbook(
+    user_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    jump_type_ids: Optional[List[int]] = Query(None, description="Filter by jump type IDs"),
+    aircraft_ids: Optional[List[int]] = Query(None, description="Filter by aircraft IDs"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)  # Only admin can view other users' logbooks
+):
+    """Get specific user's jump logbook (admin only)"""
+    filters = {
+        'jump_type_ids': jump_type_ids,
+        'aircraft_ids': aircraft_ids
+    }
+    
+    jumps = jump_crud.get_logbook_jumps(
+        db, user_id=user_id, filters=filters
+    )
+    
+    logbook_entries = []
+    for jump in jumps:
+        aircraft_name = None
+        if jump.load and jump.load.aircraft:
+            aircraft_name = jump.load.aircraft.name
+            
+        entry = LogbookJumpEntry(
+            id=jump.id,
+            jump_date=jump.jump_date,
+            jump_type_name=jump.jump_type.name,
+            jump_type_short_name=jump.jump_type.short_name,
+            aircraft_name=aircraft_name,
+            comment=jump.comment
+        )
+        logbook_entries.append(entry)
+    
+    return LogbookResponse(
+        jumps=logbook_entries
+    )
 
 
 #=========================#
@@ -80,7 +170,7 @@ def create_jump(
     current_user: User = Depends(get_current_user)
 ):
     """Create a new jump"""
-    return jump_crud.create_with_user(db, obj_in=jump_in, user_id=current_user.id)
+    return jump_crud.create_jump(db, obj_in=jump_in, user_id=current_user.id)
 
 
 @router.put("/{jump_id}", response_model=JumpResponse)
@@ -105,7 +195,7 @@ def update_jump(
             detail="Cannot update load_id directly. Use load assignment endpoints."
         )
     
-    return jump_crud.update_with_user(
+    return jump_crud.update_jump(
         db, db_obj=jump, obj_in=jump_in, user_id=current_user.id
     )
 

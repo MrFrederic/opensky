@@ -160,6 +160,21 @@ const LoadTable: React.FC<LoadTableProps> = ({
             <Typography variant="body2" color="text.secondary">
               No loads found
             </Typography>
+            <Button
+                      variant="contained"
+                      startIcon={<AddIcon />}
+                      onClick={onAddLoad}
+                      sx={{
+                        m: 1,
+                        fontSize: '0.75rem',
+                        minHeight: 0,
+                        minWidth: 0,
+                        px: 2,
+                        py: 0.5,
+                      }}
+                    >
+                      Add Load
+                    </Button>
           </Box>
         ) : (
           <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>

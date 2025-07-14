@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict, Any
+import logging
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import and_, or_
+from sqlalchemy import and_
 from fastapi import HTTPException, status
 from app.crud.base import CRUDBase
 from app.models.jumps import Jump
@@ -8,6 +9,7 @@ from app.models.users import User
 from app.models.jump_types import JumpType, AdditionalStaff
 from app.models.loads import Load
 from app.models.aircraft import Aircraft
+from app.models.enums import LoadStatus
 from app.schemas.jumps import JumpCreate, JumpUpdate
 import logging
 
@@ -86,7 +88,7 @@ class CRUDJump(CRUDBase[Jump, JumpCreate, JumpUpdate]):
         
         return query.offset(skip).limit(limit).all()
 
-    def create_with_user(self, db: Session, *, obj_in: JumpCreate, user_id: int) -> Jump:
+    def create_jump(self, db: Session, *, obj_in: JumpCreate, user_id: int) -> Jump:
         """Create jump with created_by tracking"""
         obj_in_data = obj_in.model_dump()
         obj_in_data["created_by"] = user_id
@@ -96,7 +98,7 @@ class CRUDJump(CRUDBase[Jump, JumpCreate, JumpUpdate]):
         db.refresh(db_obj)
         return self.get(db, db_obj.id)
 
-    def update_with_user(
+    def update_jump(
         self, db: Session, *, db_obj: Jump, obj_in: JumpUpdate, user_id: int
     ) -> Jump:
         """Update jump with updated_by tracking"""
@@ -178,6 +180,10 @@ class CRUDJump(CRUDBase[Jump, JumpCreate, JumpUpdate]):
         jump.reserved = reserved
         jump.updated_by = user_id
         
+        # Set jump_date if load is already departed
+        if load.status == LoadStatus.DEPARTED:
+            jump.jump_date = load.departure
+        
         assigned_jump_ids = [jump_id]
         
         # Create staff jumps if required
@@ -216,6 +222,7 @@ class CRUDJump(CRUDBase[Jump, JumpCreate, JumpUpdate]):
                 reserved=reserved,  # Staff jumps inherit the reservation status
                 parent_jump_id=jump_id,
                 comment=f"Staff for {jump.user.first_name} {jump.user.last_name}",
+                jump_date=load.departure if load.status == LoadStatus.DEPARTED else None,
                 created_by=user_id
             )
             db.add(staff_jump)
@@ -266,6 +273,7 @@ class CRUDJump(CRUDBase[Jump, JumpCreate, JumpUpdate]):
         jump.load_id = None
         jump.is_manifested = True
         jump.reserved = False  # Unset reserved when removing from load
+        jump.jump_date = None  # Clear jump date when removing from load
         jump.updated_by = user_id
         
         db.commit()
@@ -275,6 +283,81 @@ class CRUDJump(CRUDBase[Jump, JumpCreate, JumpUpdate]):
             "message": f"Jump removed from load",
             "removed_jump_ids": removed_jump_ids
         }
+
+    def get_logbook_jumps(
+        self,
+        db: Session,
+        *,
+        user_id: int,
+        filters: Optional[Dict[str, Any]] = None
+    ) -> List[Jump]:
+        """Get jumps for logbook with aircraft information and filtering"""
+        # Base query with all needed relationships
+        query = (
+            db.query(Jump)
+            .options(
+                joinedload(Jump.jump_type),
+                joinedload(Jump.load).joinedload(Load.aircraft)
+            )
+            .filter(Jump.user_id == user_id)
+            .filter(Jump.is_manifested == True)  # Only manifested jumps in logbook
+            .filter(Jump.jump_date.isnot(None))  # Only jumps with date set
+        )
+        
+        # Apply filters
+        if filters:
+            # Jump type filters by IDs (multiple)
+            if filters.get('jump_type_ids'):
+                jump_type_ids = filters['jump_type_ids']
+                if jump_type_ids:  # Only apply if list is not empty
+                    query = query.filter(Jump.jump_type_id.in_(jump_type_ids))
+            
+            # Aircraft filters by IDs (multiple)
+            if filters.get('aircraft_ids'):
+                aircraft_ids = filters['aircraft_ids']
+                if aircraft_ids:  # Only apply if list is not empty
+                    query = query.filter(
+                        Jump.load.has(Load.aircraft_id.in_(aircraft_ids))
+                    )
+            
+            # Jump type filters by names (multiple) - for backward compatibility
+            if filters.get('jump_type_names'):
+                jump_type_names = filters['jump_type_names']
+                if jump_type_names:  # Only apply if list is not empty
+                    query = query.filter(
+                        Jump.jump_type.has(JumpType.name.in_(jump_type_names))
+                    )
+            
+            # Aircraft filters by names (multiple) - for backward compatibility
+            if filters.get('aircraft_names'):
+                aircraft_names = filters['aircraft_names']
+                if aircraft_names:  # Only apply if list is not empty
+                    query = query.filter(
+                        Jump.load.has(Load.aircraft.has(Aircraft.name.in_(aircraft_names)))
+                    )
+            
+            # Legacy single filters for backward compatibility
+            if filters.get('jump_type_name'):
+                query = query.filter(
+                    Jump.jump_type.has(JumpType.name == filters['jump_type_name'])
+                )
+            
+            if filters.get('aircraft_name'):
+                query = query.filter(
+                    Jump.load.has(Load.aircraft.has(Aircraft.name == filters['aircraft_name']))
+                )
+            
+            # Manifestation status filter (though logbook only shows manifested jumps by default)
+            if filters.get('is_manifested') is not None:
+                query = query.filter(Jump.is_manifested == filters['is_manifested'])
+        
+        # Order by jump date descending, then created_at descending
+        query = query.order_by(Jump.jump_date.desc().nulls_last(), Jump.created_at.desc())
+
+        # Get all results
+        jumps = query.all()
+        
+        return jumps
 
     def get_load_jumps(self, db: Session, load_id: int) -> List[Jump]:
         """Get all jumps for a specific load"""

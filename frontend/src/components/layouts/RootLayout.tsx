@@ -36,7 +36,7 @@ const RootLayout: React.FC = () => {
     >
       {/* Default Header */}
       {!hideHeader && (
-        <Box sx={{ }}>
+        <Box>
           <Header />
         </Box>
       )}
@@ -76,7 +76,11 @@ const RootLayout: React.FC = () => {
         <Outlet />
       </Box>
 
-      <Footer />
+      {!hideHeader && (
+        <Box>
+          <Footer />
+        </Box>
+      )}
     </Box>
   );
 };

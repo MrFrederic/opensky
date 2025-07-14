@@ -17,7 +17,7 @@ import { useAuthStore } from '@/stores/auth';
 import { authService } from '@/services/auth';
 import { useUser } from '@/hooks/useUser';
 import { useToastContext } from '@/components/common/ToastProvider';
-import { AdminOnly } from '@/components/auth/RoleGuard';
+import { AdminOnly, AuthRequired } from '@/components/auth/RoleGuard';
 import User from '@/components/common/User';
 import LoginModal from '@/components/auth/LoginModal';
 
@@ -72,11 +72,24 @@ const Header: React.FC = () => {
 
         {/* Navigation */}
         <Box sx={{ display: 'flex', gap: 2, flexGrow: 1}}>
+          {/* Home Link */}
           <Button component={Link} to="/" color="inherit">
             Home
           </Button>
+
+          {/* Dashboard Link */}
+          <Button component={Link} to="/dashboard" color="inherit">
+            Dashboard
+          </Button>
           {isAuthenticated && (
             <>
+              {/* Logbook Link */}
+              <AuthRequired>
+                <Button component={Link} to="/logbook" color="inherit">
+                  Logbook
+                </Button>
+              </AuthRequired>
+
               {/* Manifesting Link */}
               <AdminOnly>
                 <Button component={Link} to="/manifesting" color="inherit">

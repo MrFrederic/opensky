@@ -53,7 +53,11 @@ export interface User {
   photo_url?: string;
   medical_clearance_date?: string; // ISO date string
   medical_clearance_is_confirmed?: boolean;
+  starting_number_of_jumps?: number;
   is_active?: boolean;
+  // Jump statistics (calculated fields)
+  jumps_in_system?: number;
+  total_jumps?: number;
   roles: UserRoleAssignment[];
   created_at: string;
   updated_at?: string;
@@ -227,4 +231,21 @@ export interface UpdateJumpData {
   reserved?: boolean;
   comment?: string;
   parent_jump_id?: number;
+}
+
+// Dashboard types for public dashboard endpoint
+export interface DashboardJump {
+  jump_id: number;
+  display_name: string;
+  jump_type_short_name: string | null;
+  parent_jump_id: number | null;
+}
+
+export interface DashboardLoad {
+  load_id: number;
+  aircraft_name: string | null;
+  departure: string;
+  remaining_public_slots: number;
+  status: LoadStatus;
+  jumps: DashboardJump[];
 }

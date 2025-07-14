@@ -23,6 +23,7 @@ class User(Base):
     photo_url = Column(Text, nullable=True)
     medical_clearance_date = Column(Date, nullable=True)
     medical_clearance_is_confirmed = Column(Boolean, default=False)
+    starting_number_of_jumps = Column(Integer, default=0, nullable=False)
     is_active = Column(Boolean, default=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -187,13 +187,9 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
       {editable && (
         <Typography variant="caption" color="text.secondary" textAlign="center">
-          {stagedPhotoUrl ? (
+          {stagedPhotoUrl && (
             <>
-              Click Save to update your avatar
-            </>
-          ) : (
-            <>
-              Max size: 10MB
+              Save to update avatar
             </>
           )}
         </Typography>

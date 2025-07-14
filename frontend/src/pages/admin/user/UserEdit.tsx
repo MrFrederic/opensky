@@ -18,6 +18,7 @@ import {
 
 import { UserRole } from '@/types';
 import { useToastContext } from '@/components/common/ToastProvider';
+import { LogbookTable } from '@/components/common';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { useAuthStore } from '@/stores/auth';
 import { usersService } from '@/services/users';
@@ -25,6 +26,7 @@ import UserInfoCard from '@/components/admin/user/UserInfoCard';
 import UserForm, { UserFormData } from '@/components/admin/user/UserForm';
 import { getUserRoles, processFieldValue, userToFormData, validateUserForm } from '@/utils/userManagement';
 import { cleanUserFormData } from '@/lib/form-utils';
+import { formatUserName } from '@/lib/utils';
 
 const AdminUserDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -55,6 +57,7 @@ const AdminUserDetails: React.FC = () => {
     photo_url: '',
     medical_clearance_date: '',
     medical_clearance_is_confirmed: false,
+    starting_number_of_jumps: 0,
     is_active: true,
   });
 
@@ -232,7 +235,7 @@ const AdminUserDetails: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="xl">
       {isCreating ? (
         // Creation Mode UI
         <>
@@ -283,7 +286,7 @@ const AdminUserDetails: React.FC = () => {
               {/* Row 1: Back button | Tabs */}
               <Grid item xs={12} md={4} lg={3}>
                 {/* Back Button */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <IconButton onClick={handleBack} size="small">
                     <ArrowBack />
                   </IconButton>
@@ -292,8 +295,9 @@ const AdminUserDetails: React.FC = () => {
 
               <Grid item xs={12} md={8} lg={9}>
                 {/* Tabs */}
-                <Tabs value={currentTab} onChange={handleTabChange} aria-label="user detail tabs" sx={{ mb: 2 }}>
+                <Tabs value={currentTab} onChange={handleTabChange} aria-label="user detail tabs">
                   <Tab label="Info" id="user-tab-0" aria-controls="user-tabpanel-0" />
+                  <Tab label="Logbook" id="user-tab-1" aria-controls="user-tabpanel-1" />
                 </Tabs>
               </Grid>
 
@@ -314,21 +318,32 @@ const AdminUserDetails: React.FC = () => {
                 )}
               </Grid>
 
-              {/* User Form */}
+              {/* Tab Content */}
               <Grid item xs={12} md={8} lg={9} sx={{ height: '100%' }}>
-                <UserForm
-                  formData={formData}
-                  selectedRoles={selectedRoles}
-                  errors={errors}
-                  canEditRoles={canEditRoles}
-                  showAdminFields={true}
-                  hasUnsavedChanges={hasUnsavedChanges}
-                  isSaving={updateUserMutation.isPending}
-                  isCreating={false}
-                  onInputChange={handleInputChange}
-                  onRoleToggle={handleRoleToggle}
-                  onSave={handleSave}
-                />
+                {currentTab === 0 && (
+                  <UserForm
+                    formData={formData}
+                    selectedRoles={selectedRoles}
+                    errors={errors}
+                    canEditRoles={canEditRoles}
+                    showAdminFields={true}
+                    hasUnsavedChanges={hasUnsavedChanges}
+                    isSaving={updateUserMutation.isPending}
+                    isCreating={false}
+                    onInputChange={handleInputChange}
+                    onRoleToggle={handleRoleToggle}
+                    onSave={handleSave}
+                  />
+                )}
+                
+                {currentTab === 1 && user && (
+                  <LogbookTable 
+                    userId={user.id}
+                    title={`${formatUserName(user)}'s Logbook`}
+                    showFilters={true}
+                    height="calc(100vh - 300px)"
+                  />
+                )}
               </Grid>
             </Grid>
           </Box>

@@ -13,9 +13,9 @@ import {
 } from '@mui/material';
 import { Delete, ErrorOutline as AlertTriangle } from '@mui/icons-material';
 import { User } from '@/types';
-import { formatDateConsistent } from '@/lib/utils';
 import { AvatarUpload } from '@/components/common/AvatarUpload';
 import { getRoleDisplayName } from '@/utils/userManagement';
+import { formatUserName } from '@/lib/utils';
 
 
 interface UserInfoCardProps {
@@ -51,32 +51,60 @@ const UserInfoCard: React.FC<UserInfoCardProps> = ({
   return (
     <>
       <Paper sx={{ p: 3, height: 'fit-content' }}>
-        {/* Avatar */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-          <AvatarUpload
-            user={user}
-            size={100}
-            editable={true}
-            stagedPhotoUrl={stagedPhotoUrl}
-            isUploading={isPhotoUploading}
-            onPhotoUrlChange={onPhotoUrlChange}
-          />
-        </Box>
+        {/* Avatar + Quick Info Side-by-Side */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: 'flex-start',
+            justifyContent: 'center',
+            mb: 3,
+            gap: 3,
+          }}
+        >
+          {/* Avatar */}
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <AvatarUpload
+              user={user}
+              size={100}
+              editable={true}
+              stagedPhotoUrl={stagedPhotoUrl}
+              isUploading={isPhotoUploading}
+              onPhotoUrlChange={onPhotoUrlChange}
+            />
+          </Box>
 
-        {/* Quick Info */}
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h6" gutterBottom>
-            {user.display_name || `${user.first_name} ${user.last_name}`}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {user.username && `@${user.username}`}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {user.email}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            ID: {user.id}
-          </Typography>
+          {/* Quick Info */}
+          <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
+            <Typography variant="h6" gutterBottom>
+              {formatUserName(user)}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {user.username && (
+                <Typography
+                  component="a"
+                  href={`https://t.me/${user.username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    color: 'primary.main',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  @{user.username}
+                </Typography>
+              )}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {user.email}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              ID: {user.id}
+            </Typography>
+          </Box>
         </Box>
 
         <Divider sx={{ my: 2 }} />
@@ -117,14 +145,20 @@ const UserInfoCard: React.FC<UserInfoCardProps> = ({
           </Typography>
         </Box>
 
-        {/* System Info */}
+        {/* Jump Statistics */}
         <Divider sx={{ my: 2 }} />
         <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            <strong>Created:</strong> {user.created_at ? formatDateConsistent(user.created_at) : 'N/A'}
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            <strong>Jump Statistics:</strong>
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            <strong>Updated:</strong> {user.updated_at ? formatDateConsistent(user.updated_at) : 'N/A'}
+            Starting Jumps: {user.starting_number_of_jumps || 0}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Jumps in System: {user.jumps_in_system || 0}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            <strong>Total Jumps: {user.total_jumps || 0}</strong>
           </Typography>
         </Box>
 

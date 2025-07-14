@@ -39,6 +39,7 @@ export interface CreateJumpData {
   jump_type_id: number;
   comment?: string;
   parent_jump_id?: number;
+  is_manifested?: boolean;
 }
 
 export interface UpdateJumpData {
@@ -79,6 +80,26 @@ export interface GetJumpsParams {
   has_load?: boolean;
   skip?: number;
   limit?: number;
+}
+
+export interface LogbookJumpEntry {
+  id: number;
+  jump_date?: string;
+  jump_type_name: string;
+  jump_type_short_name: string;
+  aircraft_name?: string;
+  comment?: string;
+}
+
+export interface LogbookResponse {
+  jumps: LogbookJumpEntry[];
+}
+
+export interface GetLogbookParams {
+  skip?: number;
+  limit?: number;
+  jump_type_ids?: number[];
+  aircraft_ids?: number[];
 }
 
 class JumpsService {
@@ -132,6 +153,46 @@ class JumpsService {
 
   async getLoadJumps(loadId: number): Promise<Jump[]> {
     const response = await api.get(`/jumps/load/${loadId}`);
+    return response.data;
+  }
+
+  async getMyLogbook(params?: GetLogbookParams): Promise<LogbookResponse> {
+    const searchParams = new URLSearchParams();
+    
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(value)) {
+            // Handle arrays for multi-select filters
+            value.forEach(item => searchParams.append(key, String(item)));
+          } else {
+            searchParams.append(key, String(value));
+          }
+        }
+      });
+    }
+    
+    const response = await api.get(`/jumps/logbook?${searchParams.toString()}`);
+    return response.data;
+  }
+
+  async getUserLogbook(userId: number, params?: GetLogbookParams): Promise<LogbookResponse> {
+    const searchParams = new URLSearchParams();
+    
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(value)) {
+            // Handle arrays for multi-select filters
+            value.forEach(item => searchParams.append(key, String(item)));
+          } else {
+            searchParams.append(key, String(value));
+          }
+        }
+      });
+    }
+    
+    const response = await api.get(`/jumps/logbook/${userId}?${searchParams.toString()}`);
     return response.data;
   }
 }

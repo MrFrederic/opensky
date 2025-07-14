@@ -25,6 +25,7 @@ class UserBase(BaseModel, EmptyStrToNoneMixin):
     photo_url: Optional[str] = None
     medical_clearance_date: Optional[date] = None
     medical_clearance_is_confirmed: Optional[bool] = False
+    starting_number_of_jumps: Optional[int] = 0
     is_active: Optional[bool] = True
 
 
@@ -63,6 +64,7 @@ class UserUpdate(BaseModel, EmptyStrToNoneMixin):
     photo_url: Optional[str] = None
     medical_clearance_date: Optional[date] = None
     medical_clearance_is_confirmed: Optional[bool] = None
+    starting_number_of_jumps: Optional[int] = None
     is_active: Optional[bool] = None
     roles: Optional[List[UserRole]] = None
 
@@ -74,5 +76,9 @@ class UserResponse(UserBase):
     id: int
     telegram_id: Optional[str] = None
     roles: List[UserRoleResponse] = []
+    # Jump statistics
+    starting_number_of_jumps: Optional[int] = 0
+    jumps_in_system: Optional[int] = 0
+    total_jumps: Optional[int] = 0
     created_at: datetime
     updated_at: Optional[datetime] = None

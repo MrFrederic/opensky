@@ -61,6 +61,7 @@ export const userToFormData = (user: User): UserFormData => {
     photo_url: user.photo_url || '',
     medical_clearance_date: user.medical_clearance_date || '',
     medical_clearance_is_confirmed: user.medical_clearance_is_confirmed || false,
+    starting_number_of_jumps: user.starting_number_of_jumps || 0,
     is_active: user.is_active !== false,
   };
 };
@@ -102,6 +103,13 @@ export const validateUserForm = (formData: UserFormData, selectedRoles?: UserRol
     const age = today.getFullYear() - birthDate.getFullYear();
     if (age < 16) {
       errors.date_of_birth = 'User must be at least 16 years old';
+    }
+  }
+
+  if (formData.starting_number_of_jumps !== undefined) {
+    const jumps = Number(formData.starting_number_of_jumps);
+    if (isNaN(jumps) || jumps < 0 || !Number.isInteger(jumps)) {
+      errors.starting_number_of_jumps = 'Starting number of jumps must be a non-negative integer';
     }
   }
 

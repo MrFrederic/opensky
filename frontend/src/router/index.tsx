@@ -1,8 +1,10 @@
 import { createBrowserRouter } from 'react-router-dom';
 import RootLayout from '@/components/layouts/RootLayout';
 import HomePage from '@/pages/public/HomePage';
+import DashboardPage from '@/pages/public/DashboardPage';
 import NotFoundPage from '@/pages/public/NotFoundPage';
 import Profile from '@/pages/Profile';
+import LogbookPage from '@/pages/Logbook';
 import UserList from '@/pages/admin/user/UserList';
 import AdminUserDetails from '@/pages/admin/user/UserEdit';
 import DictionaryList from '@/pages/admin/config/DictionaryList';
@@ -12,7 +14,7 @@ import JumpTypeEdit from '@/pages/admin/config/JumpTypeEdit';
 import AircraftList from '@/pages/admin/config/AircraftList';
 import AircraftEdit from '@/pages/admin/config/AircraftEdit';
 import ManifestingPage from '@/pages/admin/ManifestingPage';
-import { AdminOnly } from '@/components/auth/RoleGuard';
+import { AdminOnly, AuthRequired } from '@/components/auth/RoleGuard';
 
 export const router = createBrowserRouter([
   {
@@ -22,6 +24,11 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: 'dashboard',
+        element: <DashboardPage />,
+        handle: { hideHeader: true },
       },
       {
         path: 'admin/users',
@@ -38,6 +45,14 @@ export const router = createBrowserRouter([
       {
         path: 'profile',
         element: <Profile />,
+      },
+      {
+        path: 'logbook',
+        element: <LogbookPage />,
+      },
+      {
+        path: 'logbook',
+        element: <AuthRequired><LogbookPage /></AuthRequired>,
       },
       {
         path: 'admin/dictionaries',
@@ -74,7 +89,6 @@ export const router = createBrowserRouter([
       {
         path: 'manifesting',
         element: <AdminOnly><ManifestingPage /></AdminOnly>,
-        handle: { hideHeader: true },
       },
       {
         path: '*',

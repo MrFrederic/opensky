@@ -149,12 +149,28 @@ class CRUDLoad(CRUDBase[Load, LoadCreate, LoadUpdate]):
         return db_obj
 
     def update_status(self, db: Session, *, db_obj: Load, new_status: LoadStatus, updated_by: Optional[int] = None) -> Load:
-        """Update load status"""
+        """Update load status and handle jump dates"""
+        old_status = db_obj.status
+        
         update_data = {'status': new_status}
         if updated_by is not None:
             update_data['updated_by'] = updated_by
         
         db_obj = super().update(db, db_obj=db_obj, obj_in=update_data)
+        
+        # Handle jump date updates based on status change
+        if new_status == LoadStatus.DEPARTED and old_status != LoadStatus.DEPARTED:
+            # Set jump_date to load departure time for all jumps in this load
+            db.query(Jump).filter(Jump.load_id == db_obj.id).update(
+                {Jump.jump_date: db_obj.departure, Jump.updated_by: updated_by}
+            )
+        elif old_status == LoadStatus.DEPARTED and new_status != LoadStatus.DEPARTED:
+            # Clear jump_date for all jumps in this load
+            db.query(Jump).filter(Jump.load_id == db_obj.id).update(
+                {Jump.jump_date: None, Jump.updated_by: updated_by}
+            )
+        
+        db.commit()
         
         # Add space information
         spaces_info = self.get_spaces_info(db, db_obj)

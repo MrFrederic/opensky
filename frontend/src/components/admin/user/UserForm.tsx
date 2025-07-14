@@ -37,6 +37,7 @@ export interface UserFormData {
   photo_url?: string;
   medical_clearance_date?: string;
   medical_clearance_is_confirmed?: boolean;
+  starting_number_of_jumps?: number;
   is_active?: boolean;
 }
 
@@ -320,6 +321,20 @@ const UserForm: React.FC<UserFormProps> = ({
                     />
                   }
                   label="Medical Clearance Confirmed"
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6} lg={4}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Starting Number of Jumps"
+                  name="starting_number_of_jumps"
+                  value={formData.starting_number_of_jumps || 0}
+                  onChange={onInputChange}
+                  error={!!errors.starting_number_of_jumps}
+                  helperText={errors.starting_number_of_jumps || "Number of jumps user had before being added to the system"}
+                  inputProps={{ min: 0 }}
                 />
               </Grid>
 

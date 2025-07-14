@@ -40,7 +40,10 @@ export function formatDateConsistent(dateString: string): string {
   });
 }
 
-export function formatUserName(user: { first_name: string; last_name: string; username?: string }): string {
+export function formatUserName(user: { first_name: string; last_name: string; username?: string; display_name?: string }): string {
+  if (user.display_name) {
+    return user.display_name;
+  }
   const fullName = `${user.first_name} ${user.last_name}`.trim();
   return fullName || user.username || 'Unknown User';
 }
@@ -58,6 +61,20 @@ export function formatUserRoles(roles: string[]): string {
   
   const formattedRoles = roles.map(role => roleLabels[role] || role);
   return formattedRoles.join(', ');
+}
+
+export function formatSingleRole(role: string): string {
+  const roleLabels: Record<string, string> = {
+    tandem_jumper: 'Tandem Jumper',
+    aff_student: 'AFF Student',
+    sport_paid: 'Sport Jumper (Paid)',
+    sport_free: 'Sport Jumper (Free)',
+    tandem_instructor: 'Tandem Instructor',
+    aff_instructor: 'AFF Instructor',
+    administrator: 'Administrator',
+  };
+  
+  return roleLabels[role] || role.replace(/_/g, ' ').toUpperCase();
 }
 
 // Legacy function - deprecated, use formatUserRoles instead

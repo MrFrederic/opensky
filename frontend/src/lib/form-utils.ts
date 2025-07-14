@@ -6,16 +6,16 @@
  * Configuration for field cleaning
  */
 interface CleanFieldsConfig {
-  /** Fields that should have empty strings converted to undefined */
+  /** Fields that should have empty strings converted to null */
   optionalStringFields?: string[];
-  /** Fields that should have empty strings converted to undefined and be trimmed */
+  /** Fields that should have empty strings converted to null and be trimmed */
   trimFields?: string[];
   /** Fields that should be excluded from cleaning */
   excludeFields?: string[];
 }
 
 /**
- * Universal function to clean form data by converting empty strings to undefined
+ * Universal function to clean form data by converting empty strings to null
  * for optional fields and trimming string fields.
  * 
  * @param data - The form data object to clean
@@ -46,16 +46,16 @@ export function cleanFormData<T extends Record<string, any>>(
       // Trim if it's in trimFields
       const trimmedValue = trimFields.includes(key) ? value.trim() : value;
       
-      // Convert empty strings to undefined for optional fields
+      // Convert empty strings to null for optional fields
       if (optionalStringFields.includes(key) && trimmedValue === '') {
-        cleanedData[key] = undefined;
+        cleanedData[key] = null;
       } else {
         cleanedData[key] = trimmedValue;
       }
     }
     // Handle other empty values
     else if (value === '' && optionalStringFields.includes(key)) {
-      cleanedData[key] = undefined;
+      cleanedData[key] = null;
     }
   });
 
@@ -94,6 +94,7 @@ export const cleaningConfigs = {
     ],
     excludeFields: [
       'medical_clearance_is_confirmed',
+      'starting_number_of_jumps',
       'is_active'
     ]
   }

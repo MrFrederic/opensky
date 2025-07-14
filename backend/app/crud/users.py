@@ -1,8 +1,9 @@
 from typing import List, Optional, Dict, Any, Union, Union
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from app.crud.base import CRUDBase
 from app.models.users import User, UserRoleAssignment
+from app.models.jumps import Jump
 from app.models.enums import UserRole
 from app.schemas.users import UserCreate, UserUpdate
 import logging
@@ -11,9 +12,33 @@ logger = logging.getLogger(__name__)
 
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
+    def _calculate_jump_statistics(self, db: Session, user: User) -> User:
+        """Calculate and add jump statistics to user object"""
+        # Count jumps in system (completed jumps with jump_date)
+        jumps_in_system = (
+            db.query(func.count(Jump.id))
+            .filter(Jump.user_id == user.id, Jump.jump_date.isnot(None))
+            .scalar()
+        ) or 0
+        
+        # Starting number of jumps (from user field)
+        starting_jumps = user.starting_number_of_jumps or 0
+        
+        # Total jumps = starting + jumps in system
+        total_jumps = starting_jumps + jumps_in_system
+        
+        # Add these as dynamic attributes to the user object
+        user.jumps_in_system = jumps_in_system
+        user.total_jumps = total_jumps
+        
+        return user
+
     def get(self, db: Session, id: int) -> Optional[User]:
-        """Get user by id with roles loaded"""
-        return db.query(User).options(joinedload(User.roles)).filter(User.id == id).first()
+        """Get user by id with roles loaded and jump statistics calculated"""
+        user = db.query(User).options(joinedload(User.roles)).filter(User.id == id).first()
+        if user:
+            user = self._calculate_jump_statistics(db, user)
+        return user
 
     def get_users(
         self,
@@ -27,7 +52,8 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         query = db.query(User).options(joinedload(User.roles))
         
         if not filters:
-            return query.offset(skip).limit(limit).all()
+            users = query.offset(skip).limit(limit).all()
+            return [self._calculate_jump_statistics(db, user) for user in users]
 
         # Apply search across multiple fields
         if filters.get('search'):
@@ -51,7 +77,8 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         if filters.get('role'):
             query = query.join(UserRoleAssignment).filter(UserRoleAssignment.role == filters['role'])
 
-        return query.offset(skip).limit(limit).all()
+        users = query.offset(skip).limit(limit).all()
+        return [self._calculate_jump_statistics(db, user) for user in users]
 
     def create(self, db: Session, *, obj_in: UserCreate, created_by: Optional[int] = None) -> User:
         """Create a new user with roles"""
@@ -81,7 +108,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         
         db.commit()
         db.refresh(db_obj)
-        return db_obj
+        return self._calculate_jump_statistics(db, db_obj)
 
     def manage_role(self, db: Session, *, user: User, role: UserRole, action: str, created_by: Optional[int] = None) -> User:
         """Add or remove a role from a user"""
@@ -103,7 +130,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         
         db.commit()
         db.refresh(user)
-        return user
+        return self._calculate_jump_statistics(db, user)
 
     def update_roles(self, db: Session, *, user: User, roles: List[UserRole], updated_by: Optional[int] = None) -> User:
         """Replace all user roles with new ones"""
@@ -121,7 +148,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         
         db.commit()
         db.refresh(user)
-        return user
+        return self._calculate_jump_statistics(db, user)
 
     def has_role(self, db: Session, *, user: User, role: UserRole) -> bool:
         """Check if user has a specific role"""
@@ -138,7 +165,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             db.add(user)
             db.commit()
             db.refresh(user)
-        return user
+        return self._calculate_jump_statistics(db, user)
 
     def update(
         self,
@@ -175,7 +202,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)
-        return db_obj
+        return self._calculate_jump_statistics(db, db_obj)
 
 
 user = CRUDUser(User)

@@ -18,6 +18,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Jump, CreateJumpData, UpdateJumpData } from '@/types';
 import { usersService } from '@/services/users';
 import { jumpTypesService } from '@/services/jump-types';
+import { formatUserName } from '@/lib/utils';
 
 interface JumpModalProps {
   open: boolean;
@@ -74,6 +75,7 @@ const JumpModal: React.FC<JumpModalProps> = ({
       user_id: userId,
       jump_type_id: jumpTypeId as number,
       comment: comment || undefined,
+      is_manifested: true, // All jumps created on manifesting page are manifested
     };
 
     onSave(data);
@@ -95,7 +97,7 @@ const JumpModal: React.FC<JumpModalProps> = ({
             value={users.find(u => u.id === userId) || null}
             onChange={(_, newValue) => setUserId(newValue?.id || null)}
             options={users}
-            getOptionLabel={(user) => `${user.first_name} ${user.last_name}${user.display_name ? ` (${user.display_name})` : ''}`}
+            getOptionLabel={(user) => formatUserName(user)}
             loading={usersQuery.isLoading}
             renderInput={(params) => (
               <TextField

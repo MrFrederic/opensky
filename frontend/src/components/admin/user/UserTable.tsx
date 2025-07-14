@@ -49,6 +49,7 @@ const UserTable: React.FC<UserTableProps> = ({ users, onUserClick, loading = fal
                 <TableCell><Skeleton width={150} /></TableCell>
                 <TableCell><Skeleton width={200} /></TableCell>
                 <TableCell><Skeleton width={150} /></TableCell>
+                <TableCell><Skeleton width={80} /></TableCell>
                 <TableCell><Skeleton width={100} /></TableCell>
                 <TableCell width={48}></TableCell>
               </TableRow>
@@ -67,8 +68,9 @@ const UserTable: React.FC<UserTableProps> = ({ users, onUserClick, loading = fal
                   </TableCell>
                   <TableCell><Skeleton width={120} /></TableCell>
                   <TableCell><Skeleton width={180} /></TableCell>
-                  <TableCell><Skeleton width={140} /></TableCell>
-                  <TableCell><Skeleton width={80} /></TableCell>
+                  <TableCell><Skeleton width={180} /></TableCell>
+                  <TableCell><Skeleton width={40} /></TableCell>
+                  <TableCell><Skeleton width={70} /></TableCell>
                   <TableCell><Skeleton variant="circular" width={24} height={24} /></TableCell>
                 </TableRow>
               ))}
@@ -103,6 +105,11 @@ const UserTable: React.FC<UserTableProps> = ({ users, onUserClick, loading = fal
               <TableCell>
                 <Typography variant="subtitle2" fontWeight="medium">
                   Roles
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="subtitle2" fontWeight="medium">
+                  Jumps
                 </Typography>
               </TableCell>
               <TableCell>
@@ -143,6 +150,13 @@ const UserTable: React.FC<UserTableProps> = ({ users, onUserClick, loading = fal
                   <Typography variant="body2">
                     {formatRoles(user) || 'No roles'}
                   </Typography>
+                </TableCell>
+                <TableCell>
+                  <Box>
+                    <Typography variant="body2" fontWeight="medium">
+                      {user.total_jumps || 0}
+                    </Typography>
+                  </Box>
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2" color="text.secondary">

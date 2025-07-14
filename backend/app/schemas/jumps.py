@@ -53,6 +53,7 @@ class JumpBase(BaseModel):
     jump_type_id: int
     comment: Optional[str] = None
     parent_jump_id: Optional[int] = None
+    is_manifested: Optional[bool] = None
 
 
 class JumpCreate(JumpBase):
@@ -64,10 +65,10 @@ class JumpUpdate(BaseModel):
     """Schema for updating jump information (all fields optional)"""
     user_id: Optional[int] = None
     jump_type_id: Optional[int] = None
-    is_manifested: Optional[bool] = None
     reserved: Optional[bool] = None
     comment: Optional[str] = None
     parent_jump_id: Optional[int] = None
+    jump_date: Optional[datetime] = None
 
 
 class JumpMinimal(BaseModel):
@@ -81,6 +82,7 @@ class JumpMinimal(BaseModel):
     user: Optional[UserMinimal] = None
     jump_type: Optional[JumpTypeMinimal] = None
     comment: Optional[str] = None
+    jump_date: Optional[datetime] = None
     created_at: datetime
 
 
@@ -89,7 +91,6 @@ class JumpResponse(JumpBase):
     model_config = ConfigDict(from_attributes=True)
     
     id: int
-    is_manifested: bool
     load_id: Optional[int] = None
     reserved: bool = False
     user: Optional[UserMinimal] = None
@@ -97,6 +98,7 @@ class JumpResponse(JumpBase):
     load: Optional[LoadMinimal] = None
     parent_jump: Optional[JumpMinimal] = None
     child_jumps: List[JumpMinimal] = []
+    jump_date: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -125,6 +127,27 @@ class JumpLoadRemovalResponse(BaseModel):
     success: bool
     message: str
     removed_jump_ids: List[int] = []
+
+
+# =============================================================================
+# LOGBOOK SCHEMAS
+# =============================================================================
+
+class LogbookJumpEntry(BaseModel):
+    """Logbook entry showing essential jump information"""
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: int
+    jump_date: Optional[datetime] = None
+    jump_type_name: str
+    jump_type_short_name: str
+    aircraft_name: Optional[str] = None
+    comment: Optional[str] = None
+
+
+class LogbookResponse(BaseModel):
+    """Response for logbook endpoints with pagination"""
+    jumps: List[LogbookJumpEntry]
 
 
 # Fix forward reference
