@@ -32,6 +32,7 @@ class User(Base):
     
     # Relationships
     roles = relationship("UserRoleAssignment", foreign_keys="UserRoleAssignment.user_id", back_populates="user", cascade="all, delete-orphan")
+    jumps = relationship("Jump", foreign_keys="Jump.user_id", back_populates="user")
 
 
 class UserRoleAssignment(Base):

@@ -7,6 +7,7 @@ from .dictionaries import *
 from .jump_types import *
 from .aircraft import *
 from .loads import *
+from .jumps import *
 
 __all__ = [
     "Base",
@@ -22,5 +23,6 @@ __all__ = [
     "Aircraft",
     "AircraftType",
     "Load",
-    "LoadStatus"
+    "LoadStatus",
+    "Jump"
 ]

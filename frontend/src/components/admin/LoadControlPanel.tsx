@@ -30,6 +30,7 @@ interface LoadControlPanelProps {
   calculateAvailableSpaces: (load: Load) => number;
   onEditLoad?: (load: Load) => void;
   onDeleteLoad?: (load: Load) => void;
+  onJumpDrop?: (jump: any, load: Load, reserved: boolean) => void;
 }
 
 const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
@@ -40,19 +41,27 @@ const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
   calculateAvailableSpaces,
   onEditLoad,
   onDeleteLoad,
+  onJumpDrop,
 }) => {
-  const publicSpaces = calculateAvailableSpaces(selectedLoad);
-  const reservedSpaces = selectedLoad.reserved_spaces;
+  // Use backend-calculated space information if available
+  const publicSpaces = selectedLoad.remaining_public_spaces !== undefined 
+    ? selectedLoad.remaining_public_spaces 
+    : calculateAvailableSpaces(selectedLoad);
+  const reservedSpaces = selectedLoad.remaining_reserved_spaces !== undefined
+    ? selectedLoad.remaining_reserved_spaces
+    : selectedLoad.reserved_spaces;
+  const totalJumpers = (selectedLoad.occupied_public_spaces || 0) + (selectedLoad.occupied_reserved_spaces || 0);
+  const totalOpenSlots = publicSpaces + reservedSpaces;
 
   const moveToReserved = () => {
     if (publicSpaces > 0) {
-      onReservedSpacesChange(selectedLoad.id, reservedSpaces + 1);
+      onReservedSpacesChange(selectedLoad.id, selectedLoad.reserved_spaces + 1);
     }
   };
 
   const moveToPublic = () => {
-    if (reservedSpaces > 0) {
-      onReservedSpacesChange(selectedLoad.id, reservedSpaces - 1);
+    if (selectedLoad.reserved_spaces > 0) {
+      onReservedSpacesChange(selectedLoad.id, selectedLoad.reserved_spaces - 1);
     }
   };
 
@@ -67,14 +76,41 @@ const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
   const getMinutesUntilDeparture = (departure: string) => {
     return differenceInMinutes(new Date(departure), new Date());
   };
+
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDropOnPublic = (e: React.DragEvent) => {
+    e.preventDefault();
+    try {
+      const jumpData = JSON.parse(e.dataTransfer.getData('application/json'));
+      onJumpDrop?.(jumpData, selectedLoad, false); // reserved = false for public spaces
+    } catch (error) {
+      console.error('Failed to parse dropped jump data:', error);
+    }
+  };
+
+  const handleDropOnReserved = (e: React.DragEvent) => {
+    e.preventDefault();
+    try {
+      const jumpData = JSON.parse(e.dataTransfer.getData('application/json'));
+      onJumpDrop?.(jumpData, selectedLoad, true); // reserved = true for reserved spaces
+    } catch (error) {
+      console.error('Failed to parse dropped jump data:', error);
+    }
+  };
+
   return (
     <Box>
       {/* Load Stats Header */}
       <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', textAlign: 'center', bgcolor: 'primary.50' }}>
         <Typography variant="h5" sx={{ mt: 1, fontWeight: 'bold' }}>
           {selectedLoad.aircraft?.name} | 
-          Jumpers: {/* TODO */} | 
-          Open Slots: {/* TODO */} | 
+          Jumpers: {totalJumpers} | 
+          Open Slots: {totalOpenSlots} | 
           {(() => {
             const deptTime = format(new Date(selectedLoad.departure), 'HH:mm');
             const diffMins = getMinutesUntilDeparture(selectedLoad.departure);
@@ -89,6 +125,8 @@ const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
           {/* Public Spaces Box */}
           <Grid item xs={5}>
             <Box
+              onDragOver={handleDragOver}
+              onDrop={handleDropOnPublic}
               sx={{
                 border: 1,
                 borderColor: 'grey.300',
@@ -99,11 +137,24 @@ const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
-                bgcolor: 'primary.50',
-                '&:hover': { bgcolor: 'primary.100' },
+                bgcolor: 'success.50',
+                '&:hover': { bgcolor: 'success.100' },
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                position: 'relative',
+                '&::after': {
+                  content: '"Drop here for public"',
+                  position: 'absolute',
+                  bottom: 4,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  fontSize: '0.7rem',
+                  color: 'text.secondary',
+                  opacity: 0.7,
+                },
               }}
             >
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'success.main' }}>
                 {publicSpaces}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -118,7 +169,7 @@ const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
               
               <IconButton
                 onClick={moveToPublic}
-                disabled={reservedSpaces === 0}
+                disabled={selectedLoad.reserved_spaces <= 0}
                 sx={{ 
                   width: 40,
                   height: 40,
@@ -133,7 +184,7 @@ const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
               </IconButton>
               <IconButton
                 onClick={moveToReserved}
-                disabled={publicSpaces === 0}
+                disabled={publicSpaces <= 0}
                 sx={{ 
                   width: 40,
                   height: 40,
@@ -152,6 +203,8 @@ const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
           {/* Reserved Spaces Box */}
           <Grid item xs={5}>
             <Box
+              onDragOver={handleDragOver}
+              onDrop={handleDropOnReserved}
               sx={{
                 border: 1,
                 borderColor: 'grey.300',
@@ -162,11 +215,24 @@ const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
-                bgcolor: 'success.50',
-                '&:hover': { bgcolor: 'success.100' },
+                bgcolor: 'primary.50',
+                '&:hover': { bgcolor: 'primary.100' },
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                position: 'relative',
+                '&::after': {
+                  content: '"Drop here for reserved"',
+                  position: 'absolute',
+                  bottom: 4,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  fontSize: '0.7rem',
+                  color: 'text.secondary',
+                  opacity: 0.7,
+                },
               }}
             >
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                 {reservedSpaces}
               </Typography>
               <Typography variant="body2" color="text.secondary">

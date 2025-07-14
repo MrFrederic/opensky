@@ -56,7 +56,10 @@ class LoadSpacesResponse(BaseModel):
     load_id: int
     total_spaces: int
     reserved_spaces: int
-    available_spaces: int
+    occupied_public_spaces: int
+    occupied_reserved_spaces: int
+    remaining_public_spaces: int
+    remaining_reserved_spaces: int
 
 
 class LoadResponse(LoadBase):
@@ -69,3 +72,10 @@ class LoadResponse(LoadBase):
     aircraft: Optional[AircraftMinimal] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
+    
+    # Space information
+    total_spaces: Optional[int] = None
+    occupied_public_spaces: Optional[int] = None
+    occupied_reserved_spaces: Optional[int] = None
+    remaining_public_spaces: Optional[int] = None
+    remaining_reserved_spaces: Optional[int] = None

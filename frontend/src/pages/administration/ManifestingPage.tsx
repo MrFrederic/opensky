@@ -17,10 +17,15 @@ import {
 import { useToastContext } from '@/components/common/ToastProvider';
 import { loadsService } from '@/services/loads';
 import { aircraftService } from '@/services/aircraft';
+import { jumpsService } from '@/services/jumps';
 import LoadTable from '@/components/admin/LoadTable';
 import LoadControlPanel from '@/components/admin/LoadControlPanel';
 import LoadModal from '@/components/admin/LoadModal';
-import { Load, LoadStatus, CreateLoadData, UpdateLoadData } from '@/types';
+import JumpModal from '@/components/admin/JumpModal';
+import JumpsList from '@/components/admin/JumpsList';
+import LoadJumpsArea from '@/components/admin/LoadJumpsArea';
+import StaffAssignmentModal from '@/components/admin/StaffAssignmentModal';
+import { Load, LoadStatus, CreateLoadData, UpdateLoadData, Jump, CreateJumpData, UpdateJumpData } from '@/types';
 import { getErrorMessage } from '@/lib/error-utils';
 
 const ManifestingPage: React.FC = () => {
@@ -34,6 +39,10 @@ const ManifestingPage: React.FC = () => {
     // Modal states
     const [loadModalOpen, setLoadModalOpen] = useState(false);
     const [editingLoad, setEditingLoad] = useState<Load | null>(null);
+    const [jumpModalOpen, setJumpModalOpen] = useState(false);
+    const [editingJump, setEditingJump] = useState<Jump | null>(null);
+    const [staffAssignmentModalOpen, setStaffAssignmentModalOpen] = useState(false);
+    const [pendingJumpAssignment, setPendingJumpAssignment] = useState<{jump: Jump, loadId: number, reserved?: boolean} | null>(null);
 
     // Delete confirmation dialog
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -41,6 +50,9 @@ const ManifestingPage: React.FC = () => {
 
     // Selected load state
     const [selectedLoad, setSelectedLoad] = useState<Load | null>(null);
+
+    // Drag and drop state
+    const [draggedJump, setDraggedJump] = useState<Jump | null>(null);
 
     // Fetch loads with filters
     const loadsQuery = useQuery({
@@ -59,6 +71,23 @@ const ManifestingPage: React.FC = () => {
     const aircraftQuery = useQuery({
         queryKey: ['aircraft'],
         queryFn: () => aircraftService.getAircraft({ limit: 100 }),
+    });
+
+    // Fetch manifested jumps without loads
+    const manifestedJumpsQuery = useQuery({
+        queryKey: ['manifested-jumps'],
+        queryFn: () => jumpsService.getJumps({ is_manifested: true, has_load: false }),
+        refetchInterval: 5000,
+        staleTime: 0,
+    });
+
+    // Fetch jumps for selected load
+    const loadJumpsQuery = useQuery({
+        queryKey: ['load-jumps', selectedLoad?.id],
+        queryFn: () => selectedLoad ? jumpsService.getLoadJumps(selectedLoad.id) : Promise.resolve([]),
+        enabled: !!selectedLoad,
+        refetchInterval: 5000,
+        staleTime: 0,
     });
 
     // Create load mutation
@@ -130,6 +159,83 @@ const ManifestingPage: React.FC = () => {
         },
     });
 
+    // Create jump mutation
+    const createJumpMutation = useMutation({
+        mutationFn: jumpsService.createJump,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['manifested-jumps'] });
+            toast.success('Jump created successfully');
+            setJumpModalOpen(false);
+            setEditingJump(null);
+        },
+        onError: (error) => {
+            toast.error(`Failed to create jump: ${getErrorMessage(error)}`);
+        },
+    });
+
+    // Update jump mutation
+    const updateJumpMutation = useMutation({
+        mutationFn: ({ id, data }: { id: number; data: UpdateJumpData }) =>
+            jumpsService.updateJump(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['manifested-jumps'] });
+            queryClient.invalidateQueries({ queryKey: ['load-jumps'] });
+            toast.success('Jump updated successfully');
+            setJumpModalOpen(false);
+            setEditingJump(null);
+        },
+        onError: (error) => {
+            toast.error(`Failed to update jump: ${getErrorMessage(error)}`);
+        },
+    });
+
+    // Assign jump to load mutation
+    const assignJumpMutation = useMutation({
+        mutationFn: ({ jumpId, loadId, reserved, staffAssignments }: { 
+            jumpId: number; 
+            loadId: number; 
+            reserved?: boolean;
+            staffAssignments?: Record<string, number> 
+        }) =>
+            jumpsService.assignJumpToLoad(jumpId, loadId, { 
+                jump_id: jumpId, 
+                reserved: reserved || false,
+                staff_assignments: staffAssignments 
+            }),
+        onSuccess: (response) => {
+            queryClient.invalidateQueries({ queryKey: ['manifested-jumps'] });
+            queryClient.invalidateQueries({ queryKey: ['load-jumps'] });
+            queryClient.invalidateQueries({ queryKey: ['loads'] });
+            toast.success(response.message);
+            if (response.warning) {
+                toast.warning(response.warning);
+            }
+            // Close staff assignment modal if open
+            setStaffAssignmentModalOpen(false);
+            setPendingJumpAssignment(null);
+        },
+        onError: (error) => {
+            toast.error(`Failed to assign jump to load: ${getErrorMessage(error)}`);
+            // Close staff assignment modal on error
+            setStaffAssignmentModalOpen(false);
+            setPendingJumpAssignment(null);
+        },
+    });
+
+    // Remove jump from load mutation
+    const removeJumpMutation = useMutation({
+        mutationFn: jumpsService.removeJumpFromLoad,
+        onSuccess: (response) => {
+            queryClient.invalidateQueries({ queryKey: ['manifested-jumps'] });
+            queryClient.invalidateQueries({ queryKey: ['load-jumps'] });
+            queryClient.invalidateQueries({ queryKey: ['loads'] });
+            toast.success(response.message);
+        },
+        onError: (error) => {
+            toast.error(`Failed to remove jump from load: ${getErrorMessage(error)}`);
+        },
+    });
+
     // Handle query errors with toast
     useEffect(() => {
         if (loadsQuery.error) {
@@ -190,8 +296,82 @@ const ManifestingPage: React.FC = () => {
         }
     };
 
+    // Jump handlers
+    const handleCreateJump = () => {
+        setEditingJump(null);
+        setJumpModalOpen(true);
+    };
+
+    const handleEditJump = (jump: Jump) => {
+        setEditingJump(jump);
+        setJumpModalOpen(true);
+    };
+
+    const handleJumpSave = (data: CreateJumpData | UpdateJumpData) => {
+        if (editingJump) {
+            updateJumpMutation.mutate({ id: editingJump.id, data: data as UpdateJumpData });
+        } else {
+            createJumpMutation.mutate(data as CreateJumpData);
+        }
+    };
+
+    const handleJumpDragStart = (jump: Jump) => {
+        setDraggedJump(jump);
+    };
+
+    const handleJumpDropToLoad = (jump: Jump) => {
+        if (selectedLoad) {
+            checkAndAssignJump(jump, selectedLoad.id);
+        }
+    };
+
+    const handleJumpDropToList = (jump: Jump) => {
+        if (jump.load_id) {
+            removeJumpMutation.mutate(jump.id);
+        }
+    };
+
+    const handleJumpDropToLoadTable = (jump: any, load: Load) => {
+        checkAndAssignJump(jump, load.id);
+    };
+
+    const handleJumpDropOnSpaces = (jump: any, load: Load, reserved: boolean) => {
+        checkAndAssignJump(jump, load.id, reserved);
+    };
+
+    const checkAndAssignJump = (jump: Jump, loadId: number, reserved: boolean = false) => {
+        const additionalStaff = jump.jump_type?.additional_staff || [];
+        
+        if (additionalStaff.length > 0) {
+            // Jump requires additional staff, show modal
+            setPendingJumpAssignment({ jump, loadId, reserved });
+            setStaffAssignmentModalOpen(true);
+        } else {
+            // No additional staff required, assign directly
+            assignJumpMutation.mutate({ jumpId: jump.id, loadId, reserved });
+        }
+    };
+
+    const handleStaffAssignmentConfirm = (staffAssignments: Record<string, number>) => {
+        if (pendingJumpAssignment) {
+            assignJumpMutation.mutate({
+                jumpId: pendingJumpAssignment.jump.id,
+                loadId: pendingJumpAssignment.loadId,
+                reserved: pendingJumpAssignment.reserved || false,
+                staffAssignments
+            });
+        }
+    };
+
+    const handleStaffAssignmentCancel = () => {
+        setStaffAssignmentModalOpen(false);
+        setPendingJumpAssignment(null);
+    };
+
     const loads = loadsQuery.data || [];
     const aircraft = aircraftQuery.data || [];
+    const manifestedJumps = manifestedJumpsQuery.data || [];
+    const loadJumps = loadJumpsQuery.data || [];
     const isLoading = loadsQuery.isLoading;
 
     // Debug log for data updates
@@ -234,6 +414,7 @@ const ManifestingPage: React.FC = () => {
                         loading={isLoading}
                         aircraftLoading={aircraftQuery.isLoading}
                         selectedLoadId={selectedLoad?.id}
+                        onJumpDrop={handleJumpDropToLoadTable}
                     />
                 </Box>
 
@@ -250,28 +431,16 @@ const ManifestingPage: React.FC = () => {
                                 calculateAvailableSpaces={calculateAvailableSpaces}
                                 onEditLoad={handleEditLoad}
                                 onDeleteLoad={handleDeleteLoad}
+                                onJumpDrop={handleJumpDropOnSpaces}
                             />
 
                             {/* Load Content Area */}
-                            <Box sx={{ flex: 1, p: 2, display: 'flex', flexDirection: 'column' }}>
-                                <Typography variant="h6" gutterBottom>
-                                    Load Jumps (TBD)
-                                </Typography>
-                                <Box sx={{
-                                    flex: 1,
-                                    border: 2,
-                                    borderColor: 'divider',
-                                    borderStyle: 'dashed',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: 1
-                                }}>
-                                    <Typography variant="body1" color="text.secondary">
-                                        Jump manifest interface will be implemented here
-                                    </Typography>
-                                </Box>
-                            </Box>
+                            <LoadJumpsArea
+                                jumps={loadJumps}
+                                onJumpDragStart={handleJumpDragStart}
+                                onDrop={handleJumpDropToLoad}
+                                loading={loadJumpsQuery.isLoading}
+                            />
                         </>
                     ) : (
                         <Box sx={{
@@ -295,24 +464,14 @@ const ManifestingPage: React.FC = () => {
                 </Box>
 
                 {/* Third Column - List of Manifested Jumps */}
-                <Box sx={{ flex: 1, borderLeft: 1, borderColor: 'divider', p: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                        Manifested Jumps
-                    </Typography>
-                    <Box sx={{
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: 2,
-                        borderColor: 'divider',
-                        borderStyle: 'dashed',
-                        borderRadius: 1
-                    }}>
-                        <Typography variant="body1" color="text.secondary">
-                            Jump manifest interface will be implemented here
-                        </Typography>
-                    </Box>
+                <Box sx={{ flex: 1, borderLeft: 1, borderColor: 'divider' }}>
+                    <JumpsList
+                        jumps={manifestedJumps}
+                        onAddJump={handleCreateJump}
+                        onJumpDragStart={handleJumpDragStart}
+                        onJumpDrop={handleJumpDropToList}
+                        loading={manifestedJumpsQuery.isLoading}
+                    />
                 </Box>
 
                 {/* Load Modal */}
@@ -325,6 +484,27 @@ const ManifestingPage: React.FC = () => {
                     onSave={handleLoadSave}
                     load={editingLoad}
                     loading={createLoadMutation.isPending || updateLoadMutation.isPending}
+                />
+
+                {/* Jump Modal */}
+                <JumpModal
+                    open={jumpModalOpen}
+                    onClose={() => {
+                        setJumpModalOpen(false);
+                        setEditingJump(null);
+                    }}
+                    onSave={handleJumpSave}
+                    jump={editingJump}
+                    loading={createJumpMutation.isPending || updateJumpMutation.isPending}
+                />
+
+                {/* Staff Assignment Modal */}
+                <StaffAssignmentModal
+                    open={staffAssignmentModalOpen}
+                    onClose={handleStaffAssignmentCancel}
+                    onConfirm={handleStaffAssignmentConfirm}
+                    jump={pendingJumpAssignment?.jump || null}
+                    loading={assignJumpMutation.isPending}
                 />
 
                 {/* Delete Confirmation Dialog */}

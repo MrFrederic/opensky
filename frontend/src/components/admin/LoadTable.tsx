@@ -36,6 +36,7 @@ interface LoadTableProps {
   selectedLoadId?: number;
   loading?: boolean;
   aircraftLoading?: boolean;
+  onJumpDrop?: (jump: any, load: Load) => void;
 }
 
 const LoadTable: React.FC<LoadTableProps> = ({
@@ -50,6 +51,7 @@ const LoadTable: React.FC<LoadTableProps> = ({
   selectedLoadId,
   loading = false,
   aircraftLoading = false,
+  onJumpDrop,
 }) => {
   const getStatusColor = (status: LoadStatus) => {
     switch (status) {
@@ -77,11 +79,6 @@ const LoadTable: React.FC<LoadTableProps> = ({
     }
   };
 
-  const calculateAvailableSpaces = (load: Load) => {
-    const totalSpaces = load.aircraft?.max_load || 0;
-    return totalSpaces - load.reserved_spaces;
-  };
-
   const getMinutesUntilDeparture = (departure: string) => {
     return differenceInMinutes(new Date(departure), new Date());
   };
@@ -89,6 +86,21 @@ const LoadTable: React.FC<LoadTableProps> = ({
   const getSequenceNumber = (_load: Load, index: number) => {
     // For now, just use index + 1. In the future, this could be based on actual daily sequence
     return index + 1;
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, load: Load) => {
+    e.preventDefault();
+    try {
+      const jumpData = JSON.parse(e.dataTransfer.getData('application/json'));
+      onJumpDrop?.(jumpData, load);
+    } catch (error) {
+      console.error('Failed to parse dropped jump data:', error);
+    }
   };
 
   return (
@@ -176,8 +188,6 @@ const LoadTable: React.FC<LoadTableProps> = ({
               <TableBody>
                 {loads.map((load, index) => {
                   const isSelected = selectedLoadId === load.id;
-                  const totalSpaces = load.aircraft?.max_load || 0;
-                  const freeSpaces = calculateAvailableSpaces(load);
                   const minutesUntilDept = getMinutesUntilDeparture(load.departure);
                   const sequenceNum = getSequenceNumber(load, index);
                   
@@ -186,6 +196,8 @@ const LoadTable: React.FC<LoadTableProps> = ({
                       key={load.id}
                       selected={isSelected}
                       onClick={() => onLoadClick?.(load)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, load)}
                       sx={{
                         cursor: 'pointer',
                         color: getStatusColor(load.status),
@@ -204,13 +216,13 @@ const LoadTable: React.FC<LoadTableProps> = ({
                         {(load.aircraft?.name || 'Unknown') + ' ' + sequenceNum}
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center', color: 'inherit' }}>
-                        {totalSpaces}
+                        {load.total_spaces}
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center', color: 'inherit' }}>
-                        {freeSpaces}
+                        {load.remaining_public_spaces}
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center', color: 'inherit' }}>
-                        {load.reserved_spaces}
+                        {load.remaining_reserved_spaces}
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center', color: 'inherit' }}>
                         {minutesUntilDept}

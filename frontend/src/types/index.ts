@@ -159,6 +159,12 @@ export interface Load {
   reserved_spaces: number;
   created_at: string;
   updated_at?: string;
+  // Space information (calculated by backend)
+  total_spaces?: number;
+  occupied_public_spaces?: number;
+  occupied_reserved_spaces?: number;
+  remaining_public_spaces?: number;
+  remaining_reserved_spaces?: number;
 }
 
 // Load creation and update types
@@ -172,9 +178,53 @@ export interface UpdateLoadData {
   aircraft_id?: number;
 }
 
-export interface LoadSpacesInfo {
-  load_id: number;
-  total_spaces: number;
-  reserved_spaces: number;
-  available_spaces: number;
+// Jump types
+export interface Jump {
+  id: number;
+  user_id: number;
+  jump_type_id: number;
+  is_manifested: boolean;
+  load_id?: number;
+  reserved?: boolean;
+  comment?: string;
+  parent_jump_id?: number;
+  user?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    display_name?: string;
+  };
+  jump_type?: {
+    id: number;
+    name: string;
+    short_name: string;
+    additional_staff: Array<{
+      staff_required_role: string;
+      staff_default_jump_type_id?: number;
+    }>;
+  };
+  load?: {
+    id: number;
+    departure: string;
+  };
+  parent_jump?: Jump;
+  child_jumps: Jump[];
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface CreateJumpData {
+  user_id: number;
+  jump_type_id: number;
+  comment?: string;
+  parent_jump_id?: number;
+}
+
+export interface UpdateJumpData {
+  user_id?: number;
+  jump_type_id?: number;
+  is_manifested?: boolean;
+  reserved?: boolean;
+  comment?: string;
+  parent_jump_id?: number;
 }

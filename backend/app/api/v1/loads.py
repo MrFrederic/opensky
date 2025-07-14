@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_admin_user
 from app.core.database import get_db
 from app.crud.loads import load as load_crud
-from app.schemas.loads import LoadResponse, LoadUpdate, LoadCreate, LoadStatusUpdate, LoadReservedSpacesUpdate, LoadSpacesResponse
+from app.schemas.loads import LoadResponse, LoadUpdate, LoadCreate, LoadStatusUpdate, LoadReservedSpacesUpdate
 from app.models.users import User
 from app.models.enums import LoadStatus
 
@@ -151,14 +151,14 @@ def update_load_status(
 #                         #
 #=========================#
 
-@router.patch("/{load_id}/spaces", response_model=LoadSpacesResponse)
+@router.patch("/{load_id}/spaces", response_model=LoadResponse)
 def update_load_spaces(
     load_id: int,
     spaces_update: LoadReservedSpacesUpdate,
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_admin_user)
 ):
-    """Update reserved spaces for load and return spaces information (admin only)"""
+    """Update reserved spaces for load and return load information with space details (admin only)"""
     load = load_crud.get(db, id=load_id)
     if not load:
         raise HTTPException(
@@ -174,6 +174,4 @@ def update_load_spaces(
         updated_by=admin_user.id
     )
     
-    # Return spaces information
-    spaces_info = load_crud.get_spaces_info(updated_load)
-    return LoadSpacesResponse(**spaces_info)
+    return updated_load

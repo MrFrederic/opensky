@@ -24,6 +24,7 @@ class JumpType(Base):
     # Relationships
     allowed_roles = relationship("JumpTypeAllowedRole", foreign_keys="JumpTypeAllowedRole.jump_type_id", back_populates="jump_type", cascade="all, delete-orphan")
     additional_staff = relationship("AdditionalStaff", foreign_keys="AdditionalStaff.jump_type_id", back_populates="jump_type", cascade="all, delete-orphan")
+    jumps = relationship("Jump", foreign_keys="Jump.jump_type_id", back_populates="jump_type")
 
 
 class JumpTypeAllowedRole(Base):

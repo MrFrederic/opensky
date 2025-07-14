@@ -6,6 +6,7 @@ from fastapi import HTTPException, status
 from app.crud.base import CRUDBase
 from app.models.loads import Load
 from app.models.aircraft import Aircraft
+from app.models.jumps import Jump
 from app.models.enums import LoadStatus
 from app.schemas.loads import LoadCreate, LoadUpdate
 import logging
@@ -15,13 +16,22 @@ logger = logging.getLogger(__name__)
 
 class CRUDLoad(CRUDBase[Load, LoadCreate, LoadUpdate]):
     def get(self, db: Session, id: int) -> Optional[Load]:
-        """Get load by id with aircraft loaded"""
-        return (
+        """Get load by id with aircraft loaded and space info"""
+        load = (
             db.query(Load)
             .options(joinedload(Load.aircraft))
             .filter(Load.id == id)
             .first()
         )
+        
+        if load:
+            # Add space information to the load object
+            spaces_info = self.get_spaces_info(db, load)
+            for key, value in spaces_info.items():
+                if key != "load_id":  # Don't overwrite the existing id
+                    setattr(load, key, value)
+        
+        return load
 
     def get_loads(
         self,
@@ -71,7 +81,16 @@ class CRUDLoad(CRUDBase[Load, LoadCreate, LoadUpdate]):
                 if filters.get(field) is not None:
                     query = query.filter(getattr(Load, field) == filters[field])
 
-        return query.order_by(Load.departure.asc()).offset(skip).limit(limit).all()
+        loads = query.order_by(Load.departure.asc()).offset(skip).limit(limit).all()
+        
+        # Add space information to each load
+        for load in loads:
+            spaces_info = self.get_spaces_info(db, load)
+            for key, value in spaces_info.items():
+                if key != "load_id":  # Don't overwrite the existing id
+                    setattr(load, key, value)
+        
+        return loads
 
     def create(self, db: Session, *, obj_in: LoadCreate, created_by: Optional[int] = None) -> Load:
         """Create a new load with default status=forming and reserved_spaces=0"""
@@ -94,6 +113,13 @@ class CRUDLoad(CRUDBase[Load, LoadCreate, LoadUpdate]):
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)
+        
+        # Add space information
+        spaces_info = self.get_spaces_info(db, db_obj)
+        for key, value in spaces_info.items():
+            if key != "load_id":
+                setattr(db_obj, key, value)
+        
         return db_obj
 
     def update(self, db: Session, *, db_obj: Load, obj_in: LoadUpdate, updated_by: Optional[int] = None) -> Load:
@@ -114,6 +140,12 @@ class CRUDLoad(CRUDBase[Load, LoadCreate, LoadUpdate]):
                 update_data['updated_by'] = updated_by
             db_obj = super().update(db, db_obj=db_obj, obj_in=update_data)
         
+        # Add space information
+        spaces_info = self.get_spaces_info(db, db_obj)
+        for key, value in spaces_info.items():
+            if key != "load_id":
+                setattr(db_obj, key, value)
+        
         return db_obj
 
     def update_status(self, db: Session, *, db_obj: Load, new_status: LoadStatus, updated_by: Optional[int] = None) -> Load:
@@ -123,6 +155,13 @@ class CRUDLoad(CRUDBase[Load, LoadCreate, LoadUpdate]):
             update_data['updated_by'] = updated_by
         
         db_obj = super().update(db, db_obj=db_obj, obj_in=update_data)
+        
+        # Add space information
+        spaces_info = self.get_spaces_info(db, db_obj)
+        for key, value in spaces_info.items():
+            if key != "load_id":
+                setattr(db_obj, key, value)
+        
         return db_obj
 
     def update_reserved_spaces(self, db: Session, *, db_obj: Load, reserved_spaces: int, updated_by: Optional[int] = None) -> Load:
@@ -148,15 +187,37 @@ class CRUDLoad(CRUDBase[Load, LoadCreate, LoadUpdate]):
             update_data['updated_by'] = updated_by
         
         db_obj = super().update(db, db_obj=db_obj, obj_in=update_data)
+        
+        # Add space information
+        spaces_info = self.get_spaces_info(db, db_obj)
+        for key, value in spaces_info.items():
+            if key != "load_id":
+                setattr(db_obj, key, value)
+        
         return db_obj
 
-    def get_spaces_info(self, load: Load) -> dict:
-        """Get spaces information for a load"""
+    def get_spaces_info(self, db: Session, load: Load) -> dict:
+        """Get detailed spaces information for a load"""
+        # Get all jumps for this load
+        load_jumps = db.query(Jump).filter(Jump.load_id == load.id).all()
+        
+        # Calculate occupied spaces
+        occupied_public_spaces = len([j for j in load_jumps if not j.reserved])
+        occupied_reserved_spaces = len([j for j in load_jumps if j.reserved])
+        
+        # Calculate remaining spaces
+        total_spaces = load.aircraft.max_load
+        remaining_reserved_spaces = load.reserved_spaces - occupied_reserved_spaces
+        remaining_public_spaces = total_spaces - load.reserved_spaces - occupied_public_spaces
+        
         return {
             "load_id": load.id,
-            "total_spaces": load.aircraft.max_load,
+            "total_spaces": total_spaces,
             "reserved_spaces": load.reserved_spaces,
-            "available_spaces": load.aircraft.max_load - load.reserved_spaces
+            "occupied_public_spaces": occupied_public_spaces,
+            "occupied_reserved_spaces": occupied_reserved_spaces,
+            "remaining_public_spaces": remaining_public_spaces,
+            "remaining_reserved_spaces": remaining_reserved_spaces
         }
 
 

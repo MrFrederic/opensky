@@ -21,6 +21,7 @@ class Load(Base):
     
     # Relationships
     aircraft = relationship("Aircraft", back_populates="loads")
+    jumps = relationship("Jump", foreign_keys="Jump.load_id", back_populates="load")
     
     # Check constraint to ensure reserved_spaces is not negative
     __table_args__ = (
