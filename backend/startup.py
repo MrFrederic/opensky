@@ -211,34 +211,6 @@ def ensure_tables_exist():
         return False
 
 
-def initialize_data():
-    """Initialize basic data if needed"""
-    print("📊 Checking for initial data...")
-    
-    try:
-        from app.crud.dictionaries import dictionary as dict_crud
-        
-        db = SessionLocal()
-        try:
-            # Check if any dictionaries exist
-            existing_dicts = dict_crud.get_multi(db, limit=1)
-            
-            if not existing_dicts:
-                print("📝 No initial data found")
-            else:
-                print("✅ Initial data already exists")
-            
-            return True
-            
-        finally:
-            db.close()
-            
-    except Exception as e:
-        print(f"⚠️  Warning: Could not initialize data: {e}")
-        # Don't fail startup if data initialization fails
-        return True
-
-
 def initialize_minio():
     """Initialize MinIO bucket and set up file storage"""
     print("🗄️  Initializing MinIO file storage...")
@@ -334,9 +306,6 @@ def main():
     minio_success = initialize_minio()
     if not minio_success:
         print("⚠️  MinIO initialization failed, file uploads may not work properly")
-    
-    # Step 5: Initialize basic data
-    initialize_data()
     
     print("✅ Database startup completed successfully!")
     print("=" * 50)

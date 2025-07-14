@@ -1,180 +1,179 @@
 # Dropzone Management System - Backend
 
-This is the backend service for the Dropzone Management System, built with FastAPI and PostgreSQL.
+Backend service for the Dropzone Management System, built with FastAPI and PostgreSQL.
 
 ## Features
 
-- **User Management**: Authentication via Telegram SSO, user roles and statuses
-- **Equipment Management**: Track parachutes, harnesses, safety devices, etc.
-- **Tandem Operations**: Manage tandem slot availability and bookings
-- **Manifest System**: Self-manifesting for sportsmen with admin approval workflow
-- **Load Management**: Organize jumps into loads/flights
-- **Digital Logbook**: Complete jump history for users
-- **Dictionary Management**: Configurable system values
-- **RESTful API**: Comprehensive API with automatic documentation
+- **User Management**: Telegram SSO, user roles, profile fields, admin/user separation
+- **Jump Types**: Configurable jump types, allowed roles, additional staff requirements
+- **Load Management**: Aircraft, loads, automatic status updates, reserved/public spaces
+- **Manifest System**: Manifesting for sportsmen, admin approval, jump assignment
+- **Digital Logbook**: Jump history, statistics, parent/child jumps for staff
+- **Dictionaries**: Configurable system values
+- **RESTful API**: OpenAPI docs, role-based access, JWT authentication
+- **File Storage**: MinIO integration for file uploads (e.g., user photos)
+- **Automatic DB Initialization**: Waits for DB, runs Alembic migrations, fallback table creation, MinIO setup
 
 ## Tech Stack
 
-- **FastAPI**: Modern, fast web framework for building APIs
-- **SQLAlchemy**: SQL toolkit and ORM
-- **PostgreSQL**: Robust relational database
-- **Alembic**: Database migration tool
-- **JWT**: JSON Web Tokens for authentication
-- **Pydantic**: Data validation using Python type annotations
+- **FastAPI** / **Pydantic**
+- **SQLAlchemy** / **Alembic**
+- **PostgreSQL**
+- **MinIO** (S3-compatible)
+- **APScheduler** (background jobs)
+- **JWT** (python-jose)
+- **Docker Compose** (recommended for dev)
 
 ## Quick Start
 
 ### Using Docker Compose (Recommended)
 
-1. Navigate to the project root directory
-2. Start the services:
-   ```bash
-   docker-compose up --build
-   ```
-3. The API will be available at: http://localhost:8000
-4. API documentation at: http://localhost:8000/docs
+```bash
+docker-compose up --build
+```
 
-The backend service now includes **automatic database initialization**:
-- ✅ Waits for PostgreSQL to be ready
-- ✅ Runs Alembic migrations automatically
-- ✅ Creates tables if migrations fail (fallback)
-- ✅ Initializes basic data (dictionaries, admin user)
-- ✅ Verifies database connectivity on startup
+- API: http://localhost:8000
+- Docs: http://localhost:8000/docs
 
-### Local Development
+**What happens automatically:**
+- Waits for PostgreSQL to be ready
+- Runs Alembic migrations
+- Creates tables if migrations fail
+- Initializes MinIO bucket and policy
 
-1. **Using Docker Compose (Recommended):**
-   ```bash
-   # From the project root directory
-   docker-compose up -d
-   ```
-   
-   This will automatically:
-   - Start PostgreSQL database
-   - Build and start the backend service
-   - Handle all environment variables
-   - Initialize the database
-   - Set up all dependencies
+### Local Development (Without Docker)
 
-2. **For local development without Docker:**
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   
-   # Set environment variables manually
-   export DATABASE_URL="postgresql://user:pass@localhost:5432/dropzone_db"
-   export SECRET_KEY="your-secret-key-here"
-   # ... other environment variables
-   
-   uvicorn app.main:app --reload
-   ```
+```bash
+cd backend
+pip install -r requirements.txt
 
-   **Option B: Manual Setup**
-   ```bash
-   # Create database tables and initial data
-   python init_dev_db.py
-   
-   # Initialize Alembic (optional)
-   alembic revision --autogenerate -m "Initial migration"
-   alembic upgrade head
-   
-   # Start the application
-   uvicorn app.main:app --reload
-   ```
+# Set environment variables manually
+export DATABASE_URL="postgresql://user:pass@localhost:5432/dropzone_db"
+export SECRET_KEY="your-secret-key"
+# ...other variables...
+
+# Run migrations
+alembic upgrade head
+
+# Start the app
+uvicorn app.main:app --reload
+```
 
 ## Database Initialization
 
-The system provides multiple ways to initialize the database:
-
-### 1. Automatic Initialization (Docker)
-When using `docker-compose up`, the backend service will:
-- Wait for PostgreSQL to be ready
-- Run database migrations
-- Create tables if needed
-- Initialize basic data
-
-### 2. Manual Setup (Local Development Only)
-For local development without Docker, you'll need to set up the database manually:
-```bash
-# Ensure PostgreSQL is running and database exists
-# Set environment variables
-export DATABASE_URL="postgresql://user:pass@localhost:5432/dropzone_db"
-export SECRET_KEY="your-secret-key-here"
-# ... other variables from docker-compose.yml
-
-# Run Alembic migrations
-alembic upgrade head
-
-# Start the application
-uvicorn app.main:app --reload
-```
-- Initialize basic application data
-
-### 3. Database Initialization
-Database initialization is handled automatically by the Docker containers using the `startup.py` script. For local development without Docker, you'll need to set up the database manually using Alembic migrations.
+- **Docker**: Handled automatically by `startup.py`
+- **Manual**: Run `alembic upgrade head` and `uvicorn app.main:app --reload`
 
 ## Project Structure
 
 ```
 backend/
 ├── app/
-│   ├── api/                 # API routes
-│   │   ├── deps.py         # Dependencies (auth, permissions)
-│   │   └── v1/             # API version 1
-│   │       ├── auth.py     # Authentication endpoints
-│   │       ├── users.py    # User management
-│   │       ├── tandems.py  # Tandem operations
-│   │       ├── manifests.py # Manifest management
-│   │       ├── loads.py    # Loads and jumps
-│   │       ├── equipment.py # Equipment management
-│   │       └── dictionaries.py # System dictionaries
-│   ├── core/               # Core functionality
-│   │   ├── config.py       # Configuration
-│   │   ├── database.py     # Database connection
-│   │   └── security.py     # JWT and password hashing
-│   ├── crud/               # Database operations
-│   ├── models/             # SQLAlchemy models
-│   ├── schemas/            # Pydantic schemas
-│   └── main.py            # FastAPI application
-├── alembic/               # Database migrations
-├── requirements.txt       # Python dependencies
-├── Dockerfile            # Docker configuration
-├── entrypoint.sh         # Container startup script
-└── startup.py            # Database initialization script
+│   ├── api/                 # API routes (v1)
+│   ├── core/                # Core config, DB, security, scheduler
+│   ├── crud/                # CRUD logic
+│   ├── models/              # SQLAlchemy models
+│   ├── schemas/             # Pydantic schemas
+│   └── main.py              # FastAPI app
+├── alembic/                 # DB migrations
+├── requirements.txt         # Python dependencies
+├── Dockerfile
+├── entrypoint.sh
+└── startup.py               # DB/MinIO initialization
 ```
 
 ## API Documentation
 
-Once running, visit:
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
 ## Key Endpoints
 
-### Authentication
-- `POST /api/v1/auth/telegram-auth` - Authenticate with Telegram
-- `POST /api/v1/auth/refresh` - Refresh access token
+### Auth
+- `POST /api/v1/auth/telegram-auth` - Telegram login
+- `POST /api/v1/auth/refresh` - Refresh JWT
 
 ### Users
-- `GET /api/v1/users/me` - Get current user info
-- `PUT /api/v1/users/me` - Update current user
-- `POST /api/v1/users/me/request-sportsman-status` - Request sportsman upgrade
+- `GET /api/v1/users/me` - Current user info
+- `PUT /api/v1/users/me` - Update own profile
+- `GET /api/v1/users/` - List/search users (admin)
+- `POST /api/v1/users/` - Create user (admin)
+- `PUT /api/v1/users/{id}` - Update user (admin)
+- `DELETE /api/v1/users/{id}` - Delete user (admin)
 
-### Tandems
-- `GET /api/v1/tandems/slots/availability` - Check slot availability
-- `POST /api/v1/tandems/bookings` - Book tandem jump
-- `GET /api/v1/tandems/bookings/me` - Get my bookings
+### Jump Types
+- `GET /api/v1/jump-types/` - List jump types
+- `POST /api/v1/jump-types/` - Create (admin)
+- `PUT /api/v1/jump-types/{id}` - Update (admin)
+- `DELETE /api/v1/jump-types/{id}` - Delete (admin)
 
-### Manifests
-- `POST /api/v1/manifests/` - Create manifest
-- `GET /api/v1/manifests/me` - Get my manifests
-- `POST /api/v1/manifests/{id}/approve` - Approve manifest (admin)
+### Loads
+- `GET /api/v1/loads/` - List loads (filter by aircraft, date, status)
+- `POST /api/v1/loads/` - Create load (admin)
+- `PUT /api/v1/loads/{id}` - Update load (admin)
+- `PATCH /api/v1/loads/{id}/status` - Update status (admin)
+- `PATCH /api/v1/loads/{id}/spaces` - Update reserved spaces (admin)
+- `DELETE /api/v1/loads/{id}` - Delete load (admin)
 
-### Loads & Jumps
-- `GET /api/v1/loads` - List loads
-- `GET /api/v1/jumps/me` - Get my jump history (logbook)
-- `GET /api/v1/jumps/me/stats` - Get jump statistics
+### Jumps
+- `GET /api/v1/jumps/` - List jumps (filter by user, type, load, etc.)
+- `POST /api/v1/jumps/` - Create jump
+- `PUT /api/v1/jumps/{id}` - Update jump
+- `DELETE /api/v1/jumps/{id}` - Delete jump (admin, only if not assigned to load)
+- `POST /api/v1/jumps/{id}/assign-to-load/{load_id}` - Assign jump to load
+- `POST /api/v1/jumps/{id}/remove-from-load` - Remove jump from load
 
+## Authentication
+
+- JWT tokens (via Telegram SSO)
+- Role-based access (admin/user)
+- Use `Authorization: Bearer <token>` header
+
+## User Roles
+
+- **TANDEM_JUMPER**
+- **AFF_STUDENT**
+- **SPORT_PAID**
+- **SPORT_FREE**
+- **TANDEM_INSTRUCTOR**
+- **AFF_INSTRUCTOR**
+- **ADMINISTRATOR**
+
+## Database Migrations
+
+```bash
+alembic revision --autogenerate -m "Describe changes"
+alembic upgrade head
+alembic downgrade -1
+```
+
+## File Storage
+
+- MinIO S3-compatible storage for user photos and other files
+- Public read policy set on bucket
+
+## Scheduler
+
+- APScheduler runs background job to update load statuses (e.g., FORMING → ON_CALL → DEPARTED)
+
+## Security
+
+- JWT tokens, bcrypt password hashing
+- Role-based endpoint protection
+- SQL injection protection via ORM
+
+## Deployment
+
+- Containerized (Docker)
+- Configure environment variables for production
+- Use HTTPS, strong secrets, proper CORS, backups, logging
+
+## Scripts
+
+- `entrypoint.sh` - Docker startup
+- `startup.py` - DB/MinIO initialization and migration
+
+---
 ## Authentication
 
 The system uses JWT tokens for authentication. Users authenticate via Telegram SSO:
@@ -184,27 +183,6 @@ The system uses JWT tokens for authentication. Users authenticate via Telegram S
 3. JWT access token is returned
 4. Token is included in API requests via Authorization header
 
-## User Roles & Permissions
-
-### User Statuses
-- **Newby**: Can book tandems, limited access
-- **Individual Sportsman**: Can manifest, pays for jumps
-- **Sportsman**: Can manifest, free jumps
-- **Instructor**: Full sportsman privileges + additional access
-
-### Admin Role
-- Can be assigned to any user regardless of status
-- Full system access including user management, equipment, etc.
-
-## Database Schema
-
-The system uses a normalized PostgreSQL schema with:
-- User management with roles and statuses
-- Equipment inventory with categories and status tracking
-- Manifest and jump tracking with full audit trail
-- Configurable dictionaries for system values
-- Tandem slot management with availability tracking
-
 ## Development
 
 ### Adding New Features
@@ -213,7 +191,6 @@ The system uses a normalized PostgreSQL schema with:
 2. Add CRUD operations in `app/crud/`
 3. Define schemas in `app/schemas/`
 4. Implement API endpoints in `app/api/v1/`
-5. Add appropriate tests
 
 ### Database Migrations
 

@@ -1,133 +1,136 @@
 # Dropzone Management System - Frontend
 
-This is the React-based frontend for the Dropzone Management System, built with modern technologies and following the architecture specified in the SAD document.
+React-based frontend for the Dropzone Management System.
 
-## Technology Stack
+## Tech Stack
 
-- **React 18** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **React Router** - Client-side routing
-- **TanStack Query** - Server state management
-- **Zustand** - Global state management
-- **Tailwind CSS** - Styling
-- **Axios** - HTTP client
-- **React Hook Form + Zod** - Form handling and validation
+- **React 18** + **TypeScript**
+- **Vite** (build/dev server)
+- **Material UI (MUI)** (component library & theming)
+- **TanStack Query** (server state management)
+- **Zustand** (global state)
+- **Axios** (HTTP client)
+- **React Router v6** (routing)
+- **React Hook Form** + **Zod** (form handling & validation)
 
 ## Project Structure
 
 ```
 src/
-├── components/          # Reusable UI components
-│   ├── auth/           # Authentication-related components
-│   ├── forms/          # Form components
-│   ├── layouts/        # Layout components
-│   └── ui/             # Basic UI components
-├── pages/              # Page components
-├── services/           # API service functions
-├── stores/             # Zustand stores
-├── types/              # TypeScript type definitions
-├── lib/                # Utility libraries and configurations
-├── router/             # React Router configuration
-└── index.css           # Global styles with Tailwind
+├── api/                # (optional) API route helpers
+├── components/         # Reusable UI components
+│   ├── admin/          # Admin-specific components
+│   ├── auth/           # Auth-related components
+│   ├── common/         # Shared/common UI
+│   ├── layouts/        # Layout components (Header, Footer, etc.)
+├── hooks/              # Custom React hooks
+├── lib/                # Utility libraries/configs (axios, react-query, etc.)
+├── pages/              # Page components (routed)
+│   ├── administration/ # Admin pages (users, jump types, aircraft, etc.)
+├── router/             # React Router config
+├── services/           # API service functions (axios)
+├── stores/             # Zustand stores (auth, etc.)
+├── theme/              # MUI theme config
+├── types/              # TypeScript types/enums
+├── index.css           # Global styles
+├── main.tsx            # App entry point
+└── App.tsx             # App root
 ```
 
-## Key Features Based on SRS Requirements
+## Features
 
-### User Management (UR-001 to UR-004)
-- Telegram SSO authentication
-- User profile management
-- Role-based access control
-
-### Tandem Management (UR-005 to UR-008)
-- Tandem booking system with calendar
-- Slot availability checking
-- Booking modifications
-
-### Sportsman Features (UR-009 to UR-010)
-- Digital logbook
-- Self-manifesting system
-- Equipment selection
-
-### Equipment Management (UR-011 to UR-012)
-- Equipment inventory viewing
-- Usage tracking
-
-### Load Management (UR-013 to UR-017)
-- Manifest review and approval
-- Load scheduling and management
-- Jump tracking
-
-### Reporting (UR-018)
-- Jump statistics and reports
+- **Authentication**: Telegram SSO, JWT, persistent auth state
+- **User Management**: Profile, admin user CRUD, roles
+- **Jump Types**: List, create, edit, assign allowed roles/staff
+- **Loads & Manifesting**: Load management, jump assignment, drag & drop, real-time updates
+- **Digital Logbook**: (Planned) Jump history, stats
+- **Load Dashboard**: (Planned) Public display of loads, jumps and remaining slots
+- **Equipment**: (Planned) Equipment tracking
+- **Dictionaries**: System values management (admin)
+- **Responsive UI**: Material UI theme, mobile-friendly
+- **API Integration**: Axios + TanStack Query, error handling, auto-refresh
 
 ## Development Setup
 
 ### Prerequisites
 
 - Node.js 18+
-- npm or yarn
+- npm
 
-### Installation
+### Install & Run
 
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
+```
 
-# Build for production
+- App: http://localhost:3000
+
+### Build for Production
+
+```bash
 npm run build
-
-# Preview production build
 npm run preview
-```
-
-### Development Commands
-
-```bash
-# Run linting
-npm run lint
-
-# Fix linting issues
-npm run lint:fix
-```
-
-## Docker Development
-
-The frontend is configured to run in Docker with nginx for production builds:
-
-```bash
-# Build and run with docker-compose
-docker-compose up -d frontend
 ```
 
 ## Environment Variables
 
-The frontend uses environment variables to configure API connections:
+- `VITE_API_HOST` - Backend API URL (default: proxied to http://localhost:8000 in dev)
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `VITE_API_HOST` | Base URL for backend API | Empty (uses relative paths) |
-| `API_HOST` | Used in docker build for configuring API proxy | `http://backend:8000` |
+For local dev, create `.env`:
 
-### Docker Compose (Recommended)
-
-Environment variables are automatically handled by Docker Compose. For local development without Docker, you can set:
-
-```bash
-# For local development only
-export VITE_API_HOST=http://localhost:8000
+```
+VITE_API_HOST=http://localhost:8000
 ```
 
-```bash
-# Build and run with docker-compose
-docker-compose up frontend
+## API Proxy (Dev)
 
-# Access the application
-open http://localhost:3000
-```
+Vite dev server proxies `/api` to backend (`http://localhost:8000` by default).
+
+## Authentication Flow
+
+- Telegram SSO → JWT tokens (stored in Zustand)
+- Auth state persisted in localStorage
+- API requests include token automatically
+
+## State Management
+
+- **Zustand**: Auth/user state
+- **TanStack Query**: Server data (users, loads, jumps, etc.)
+
+## Styling
+
+- **Material UI**: Theming, components, responsive design
+- **Custom theme**: Dropzone colors, typography
+
+## Routing
+
+- **React Router v6**: Nested routes, protected admin routes
+
+## Testing
+
+- (Add tests as needed)
+
+## Docker
+
+- Production build can be served with nginx or any static server
+- For dev, use Vite dev server
+
+## Security
+
+- JWT token management
+- Role-based route protection
+- Input validation (Zod)
+- CSP headers in dev
+
+---
+
+## Next Steps
+
+- Add personal logbook
+- Add Receptions interface
+- Add Public Load Dashboard
+- Improve accessibility and mobile UX
 
 ## API Integration
 
@@ -152,25 +155,11 @@ The frontend is configured to work with the backend API through:
 
 ## Styling
 
-The application uses Tailwind CSS with:
+The application uses Material UI with:
 
 - Custom color palette (primary blue theme)
 - Responsive design utilities
 - Component classes for common patterns
-- Dark mode support (can be added later)
-
-## Environment Variables
-
-Environment variables are handled automatically by Docker Compose. The main variables are:
-
-- `VITE_API_HOST` - Backend API URL (set by Docker Compose)
-- `API_HOST` - Used in Docker build for nginx proxy configuration
-
-For local development without Docker, you can manually set:
-
-```bash
-export VITE_API_HOST=http://localhost:8000
-```
 
 ## Deployment
 
