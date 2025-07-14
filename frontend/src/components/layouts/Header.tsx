@@ -9,13 +9,9 @@ import {
   Menu,
   MenuItem,
   CircularProgress,
-  IconButton,
-  useTheme,
-  useMediaQuery,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
-  Menu as MenuIcon,
 } from '@mui/icons-material';
 import { useAuthStore } from '@/stores/auth';
 import { authService } from '@/services/auth';
@@ -30,8 +26,6 @@ const Header: React.FC = () => {
   const { user, isLoading } = useUser();
   const navigate = useNavigate();
   const toast = useToastContext();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [adminMenuAnchor, setAdminMenuAnchor] = useState<null | HTMLElement>(null);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
 
@@ -73,65 +67,54 @@ const Header: React.FC = () => {
             mr: 4,
           }}
         >
-          Dropzone Management
+          DZM
         </Typography>
 
         {/* Navigation - Desktop */}
-        {!isMobile && (
-          <Box sx={{ display: 'flex', gap: 2, flexGrow: 1 }}>
-            <Button component={Link} to="/" color="inherit">
-              Home
-            </Button>
-            {isAuthenticated && (
-              <>
-                {/* Manifesting Link */}
-                <AdminOnly>
-                  <Button component={Link} to="/manifesting" color="inherit">
-                    Manifesting
-                  </Button>
-                </AdminOnly>
-                
-                {/* Administration Menu */}
-                <AdminOnly>
-                  <Button
-                    color="inherit"
-                    onClick={handleAdminMenuClick}
-                    endIcon={<ExpandMoreIcon />}
-                  >
-                    Administration
-                  </Button>
-                  <Menu
-                    anchorEl={adminMenuAnchor}
-                    open={Boolean(adminMenuAnchor)}
-                    onClose={handleAdminMenuClose}
-                  >
-                    <MenuItem component={Link} to="/admin/users" onClick={handleAdminMenuClose}>
-                      Users
-                    </MenuItem>
-                    <MenuItem component={Link} to="/admin/jump-types" onClick={handleAdminMenuClose}>
-                      Jump Types
-                    </MenuItem>
-                    <MenuItem component={Link} to="/admin/aircraft" onClick={handleAdminMenuClose}>
-                      Aircraft
-                    </MenuItem>
-                    <MenuItem component={Link} to="/admin/dictionaries" onClick={handleAdminMenuClose}>
-                      Dictionaries
-                    </MenuItem>
-                  </Menu>
-                </AdminOnly>
-              </>
-            )}
-          </Box>
-        )}
+        <Box sx={{ display: 'flex', gap: 2, flexGrow: 1 }}>
+          <Button component={Link} to="/" color="inherit">
+            Home
+          </Button>
+          {isAuthenticated && (
+            <>
+              {/* Manifesting Link */}
+              <AdminOnly>
+                <Button component={Link} to="/manifesting" color="inherit">
+                  Manifesting
+                </Button>
+              </AdminOnly>
 
-        {/* Mobile menu button */}
-        {isMobile && (
-          <Box sx={{ flexGrow: 1 }}>
-            <IconButton color="inherit">
-              <MenuIcon />
-            </IconButton>
-          </Box>
-        )}
+              {/* Administration Menu */}
+              <AdminOnly>
+                <Button
+                  color="inherit"
+                  onClick={handleAdminMenuClick}
+                  endIcon={<ExpandMoreIcon />}
+                >
+                  Administration
+                </Button>
+                <Menu
+                  anchorEl={adminMenuAnchor}
+                  open={Boolean(adminMenuAnchor)}
+                  onClose={handleAdminMenuClose}
+                >
+                  <MenuItem component={Link} to="/admin/users" onClick={handleAdminMenuClose}>
+                    Users
+                  </MenuItem>
+                  <MenuItem component={Link} to="/admin/jump-types" onClick={handleAdminMenuClose}>
+                    Jump Types
+                  </MenuItem>
+                  <MenuItem component={Link} to="/admin/aircraft" onClick={handleAdminMenuClose}>
+                    Aircraft
+                  </MenuItem>
+                  <MenuItem component={Link} to="/admin/dictionaries" onClick={handleAdminMenuClose}>
+                    Dictionaries
+                  </MenuItem>
+                </Menu>
+              </AdminOnly>
+            </>
+          )}
+        </Box>
 
         {/* User menu */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -140,11 +123,11 @@ const Header: React.FC = () => {
               {isLoading ? (
                 <CircularProgress size={24} />
               ) : user ? (
-                <Box 
-                  component={Link} 
-                  to="/profile" 
-                  sx={{ 
-                    textDecoration: 'none', 
+                <Box
+                  component={Link}
+                  to="/profile"
+                  sx={{
+                    textDecoration: 'none',
                     color: 'inherit',
                     '&:hover': { opacity: 0.8 }
                   }}
@@ -162,11 +145,11 @@ const Header: React.FC = () => {
             </Button>
           )}
         </Box>
-        
+
         {/* Login Modal */}
-        <LoginModal 
-          open={loginModalOpen} 
-          onClose={() => setLoginModalOpen(false)} 
+        <LoginModal
+          open={loginModalOpen}
+          onClose={() => setLoginModalOpen(false)}
         />
       </Toolbar>
     </AppBar>

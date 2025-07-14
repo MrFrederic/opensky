@@ -35,10 +35,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: 3000,
+      port: 80,
       proxy: {
         '/api': {
-          target: env.API_HOST || 'http://localhost:8000',
+          target: env.API_HOST || 'http://backend:8000',
           changeOrigin: true,
         },
       },

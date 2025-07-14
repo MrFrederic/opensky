@@ -23,6 +23,7 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+        handle: { hideHeader: true },
       },
       {
         path: 'admin/users',

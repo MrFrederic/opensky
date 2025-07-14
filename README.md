@@ -73,7 +73,8 @@ npm run dev
 
 ## License
 
-MIT. Because sharing is caring.
+This project is licensed under the [MIT License](./LICENSE). You are free to use, modify, and distribute it as you wish.
+*Because sharing is caring* >_<
 
 ---
 

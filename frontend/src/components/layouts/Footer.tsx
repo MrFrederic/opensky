@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Container, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 const Footer: React.FC = () => {
   return (
@@ -9,18 +9,43 @@ const Footer: React.FC = () => {
         bgcolor: 'background.paper',
         borderTop: 1,
         borderColor: 'divider',
-        py: 4,
+        py: 1,
+        width: '100vw',
+        position: 'fixed',
+        left: 0,
+        bottom: 0,
+        zIndex: 1300,
       }}
     >
-      <Container maxWidth="lg">
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-        >
-          &copy; 2025 Dropzone Management System. Built with React and FastAPI.
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%',
+          minHeight: 40,
+          px: { xs: 1, sm: 2 },
+        }}
+      >
+        {/* Left: Contact */}
+        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+          Contact:&nbsp;
+          <a href="https://t.me/mrfrederic" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
+            @MrFrederic
+          </a>
         </Typography>
-      </Container>
+        {/* Center: System Info */}
+        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', flex: 1 }}>
+          &copy; 2025 Dropzone Management System &mdash; React & FastAPI
+        </Typography>
+        {/* Right: License */}
+        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+          <a href="/LICENSE" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
+            MIT License
+          </a>
+        </Typography>
+      </Box>
     </Box>
   );
 };
