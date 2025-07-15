@@ -17,7 +17,7 @@ import { useAuthStore } from '@/stores/auth';
 import { authService } from '@/services/auth';
 import { useUser } from '@/hooks/useUser';
 import { useToastContext } from '@/components/common/ToastProvider';
-import { AdminOnly, AuthRequired } from '@/components/auth/RoleGuard';
+import { RoleGuard } from '@/components/auth/RoleGuard';
 import User from '@/components/common/User';
 import LoginModal from '@/components/auth/LoginModal';
 
@@ -84,28 +84,28 @@ const Header: React.FC = () => {
           {isAuthenticated && (
             <>
               {/* Logbook Link */}
-              <AuthRequired>
+              <RoleGuard permission="VIEW_LOGBOOK">
                 <Button component={Link} to="/logbook" color="inherit">
                   Logbook
                 </Button>
-              </AuthRequired>
+              </RoleGuard>
 
               {/* Manifesting Link */}
-              <AdminOnly>
+              <RoleGuard permission="MANAGE_MANIFEST">
                 <Button component={Link} to="/manifesting" color="inherit">
                   Manifesting
                 </Button>
-              </AdminOnly>
+              </RoleGuard>
 
               {/* Users Link */}
-              <AdminOnly>
+              <RoleGuard permission="MANAGE_USERS">
                 <Button component={Link} to="/admin/users" color="inherit">
                   Users
                 </Button>
-              </AdminOnly>
+              </RoleGuard>
 
               {/* Administration Menu */}
-              <AdminOnly>
+              <RoleGuard permission="ADMIN_ACCESS">
                 <Button
                   color="inherit"
                   onClick={handleAdminMenuClick}
@@ -118,17 +118,23 @@ const Header: React.FC = () => {
                   open={Boolean(adminMenuAnchor)}
                   onClose={handleAdminMenuClose}
                 >
-                  <MenuItem component={Link} to="/admin/jump-types" onClick={handleAdminMenuClose}>
-                    Jump Types
-                  </MenuItem>
-                  <MenuItem component={Link} to="/admin/aircraft" onClick={handleAdminMenuClose}>
-                    Aircrafts
-                  </MenuItem>
-                  <MenuItem component={Link} to="/admin/dictionaries" onClick={handleAdminMenuClose}>
-                    Dictionaries
-                  </MenuItem>
+                  <RoleGuard permission="MANAGE_JUMP_TYPES">
+                    <MenuItem component={Link} to="/admin/jump-types" onClick={handleAdminMenuClose}>
+                      Jump Types
+                    </MenuItem>
+                  </RoleGuard>
+                  <RoleGuard permission="MANAGE_AIRCRAFT">
+                    <MenuItem component={Link} to="/admin/aircraft" onClick={handleAdminMenuClose}>
+                      Aircrafts
+                    </MenuItem>
+                  </RoleGuard>
+                  <RoleGuard permission="MANAGE_SETTINGS">
+                    <MenuItem component={Link} to="/admin/dictionaries" onClick={handleAdminMenuClose}>
+                      Dictionaries
+                    </MenuItem>
+                  </RoleGuard>
                 </Menu>
-              </AdminOnly>
+              </RoleGuard>
             </>
           )}
         </Box>

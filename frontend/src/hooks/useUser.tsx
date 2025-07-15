@@ -9,7 +9,7 @@ import { queryKeys } from '@/lib/react-query';
  * Hook to fetch and manage current user data
  */
 export const useUser = () => {
-  const { isAuthenticated, user, setUser, setLoading } = useAuthStore();
+  const { isAuthenticated, user, setUser, setLoading, fetchPermissions } = useAuthStore();
 
   // Query for fetching user data
   const query = useQuery<User>({
@@ -20,12 +20,13 @@ export const useUser = () => {
     refetchOnWindowFocus: false,
   });
 
-  // When query is successful, update the user in the store
+  // When query is successful, update the user in the store and fetch permissions
   useEffect(() => {
     if (query.data) {
       setUser(query.data);
+      fetchPermissions(); // Fetch permissions when user data is loaded
     }
-  }, [query.data, setUser]);
+  }, [query.data, setUser, fetchPermissions]);
 
   // Update loading state in the auth store
   useEffect(() => {

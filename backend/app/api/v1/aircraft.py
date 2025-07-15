@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_admin_user
 from app.core.database import get_db
+from app.core.permissions import require_permission
 from app.crud.aircraft import aircraft as aircraft_crud
 from app.schemas.aircraft import AircraftResponse, AircraftUpdate, AircraftCreate
 from app.models.users import User
@@ -59,23 +60,25 @@ def read_aircraft(
 #=========================#
 
 @router.post("/", response_model=AircraftResponse)
+@require_permission("MANAGE_AIRCRAFT")
 def create_aircraft(
     aircraft_create: AircraftCreate,
     db: Session = Depends(get_db),
-    admin_user: User = Depends(get_admin_user)
+    current_user: User = Depends(get_current_user)
 ):
-    """Create a new aircraft (admin only)"""
-    return aircraft_crud.create(db, obj_in=aircraft_create, created_by=admin_user.id)
+    """Create a new aircraft"""
+    return aircraft_crud.create(db, obj_in=aircraft_create, created_by=current_user.id)
 
 
 @router.put("/{aircraft_id}", response_model=AircraftResponse)
+@require_permission("MANAGE_AIRCRAFT")
 def update_aircraft(
     aircraft_id: int,
     aircraft_update: AircraftUpdate,
     db: Session = Depends(get_db),
-    admin_user: User = Depends(get_admin_user)
+    current_user: User = Depends(get_current_user)
 ):
-    """Update aircraft (admin only)"""
+    """Update aircraft"""
     aircraft = aircraft_crud.get(db, id=aircraft_id)
     if not aircraft:
         raise HTTPException(
@@ -87,17 +90,18 @@ def update_aircraft(
         db,
         db_obj=aircraft,
         obj_in=aircraft_update,
-        updated_by=admin_user.id
+        updated_by=current_user.id
     )
 
 
 @router.delete("/{aircraft_id}")
+@require_permission("MANAGE_AIRCRAFT")
 def delete_aircraft(
     aircraft_id: int,
     db: Session = Depends(get_db),
-    admin_user: User = Depends(get_admin_user)
+    current_user: User = Depends(get_current_user)
 ):
-    """Delete aircraft (admin only)"""
+    """Delete aircraft"""
     aircraft = aircraft_crud.get(db, id=aircraft_id)
     if not aircraft:
         raise HTTPException(
@@ -105,5 +109,5 @@ def delete_aircraft(
             detail="Aircraft not found"
         )
     
-    aircraft_crud.remove(db, id=aircraft_id, deleted_by=admin_user.id)
+    aircraft_crud.remove(db, id=aircraft_id, deleted_by=current_user.id)
     return {"message": "Aircraft deleted successfully"}

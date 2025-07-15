@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_admin_user
 from app.core.database import get_db
+from app.core.permissions import require_permission
 from app.crud.loads import load as load_crud
 from app.schemas.loads import LoadResponse, LoadUpdate, LoadCreate, LoadStatusUpdate, LoadReservedSpacesUpdate
 from app.models.users import User
@@ -19,6 +20,7 @@ router = APIRouter()
 #=========================#
 
 @router.get("/", response_model=List[LoadResponse])
+@require_permission("VIEW_LOADS")
 def list_loads(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
@@ -44,6 +46,7 @@ def list_loads(
 
 
 @router.get("/{load_id}", response_model=LoadResponse)
+@require_permission("VIEW_LOADS")
 def read_load(
     load_id: int,
     db: Session = Depends(get_db),
@@ -66,23 +69,25 @@ def read_load(
 #=========================#
 
 @router.post("/", response_model=LoadResponse)
+@require_permission("CREATE_LOAD")
 def create_load(
     load_create: LoadCreate,
     db: Session = Depends(get_db),
-    admin_user: User = Depends(get_admin_user)
+    current_user: User = Depends(get_current_user)
 ):
-    """Create a new load (admin only) - always created with status=forming and reserved_spaces=0"""
-    return load_crud.create(db, obj_in=load_create, created_by=admin_user.id)
+    """Create a new load - always created with status=forming and reserved_spaces=0"""
+    return load_crud.create(db, obj_in=load_create, created_by=current_user.id)
 
 
 @router.put("/{load_id}", response_model=LoadResponse)
+@require_permission("MANAGE_LOADS")
 def update_load(
     load_id: int,
     load_update: LoadUpdate,
     db: Session = Depends(get_db),
-    admin_user: User = Depends(get_admin_user)
+    current_user: User = Depends(get_current_user)
 ):
-    """Update load basic information (admin only) - excludes status and reserved_spaces"""
+    """Update load basic information - excludes status and reserved_spaces"""
     load = load_crud.get(db, id=load_id)
     if not load:
         raise HTTPException(
@@ -94,7 +99,7 @@ def update_load(
         db,
         db_obj=load,
         obj_in=load_update,
-        updated_by=admin_user.id
+        updated_by=current_user.id
     )
 
 

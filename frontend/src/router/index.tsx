@@ -5,6 +5,7 @@ import DashboardPage from '@/pages/public/DashboardPage';
 import NotFoundPage from '@/pages/public/NotFoundPage';
 import Profile from '@/pages/Profile';
 import LogbookPage from '@/pages/Logbook';
+import PermissionTestPage from '@/pages/PermissionTestPage';
 import RegistrationVerificationPage from '@/pages/RegistrationVerificationPage';
 import UserList from '@/pages/admin/user/UserList';
 import AdminUserDetails from '@/pages/admin/user/UserEdit';
@@ -15,7 +16,7 @@ import JumpTypeEdit from '@/pages/admin/config/JumpTypeEdit';
 import AircraftList from '@/pages/admin/config/AircraftList';
 import AircraftEdit from '@/pages/admin/config/AircraftEdit';
 import ManifestingPage from '@/pages/admin/ManifestingPage';
-import { AdminOnly } from '@/components/auth/RoleGuard';
+import { RoleGuard } from '@/components/auth/RoleGuard';
 import { RequireRegistration, RequireCompletedRegistration } from '@/components/auth/RegistrationGuard';
 
 export const router = createBrowserRouter([
@@ -34,15 +35,15 @@ export const router = createBrowserRouter([
       },
       {
         path: 'admin/users',
-        element: <RequireCompletedRegistration><AdminOnly><UserList /></AdminOnly></RequireCompletedRegistration>,
+        element: <RequireCompletedRegistration><RoleGuard permission="MANAGE_USERS" requireAuth={true} use404Fallback={true}><UserList /></RoleGuard></RequireCompletedRegistration>,
       },
       {
         path: 'admin/users/new',
-        element: <RequireCompletedRegistration><AdminOnly><AdminUserDetails /></AdminOnly></RequireCompletedRegistration>,
+        element: <RequireCompletedRegistration><RoleGuard permission="MANAGE_USERS" requireAuth={true} use404Fallback={true}><AdminUserDetails /></RoleGuard></RequireCompletedRegistration>,
       },
       {
         path: 'admin/users/:id',
-        element: <RequireCompletedRegistration><AdminOnly><AdminUserDetails /></AdminOnly></RequireCompletedRegistration>,
+        element: <RequireCompletedRegistration><RoleGuard permission="MANAGE_USERS" requireAuth={true} use404Fallback={true}><AdminUserDetails /></RoleGuard></RequireCompletedRegistration>,
       },
       {
         path: 'profile',
@@ -57,40 +58,44 @@ export const router = createBrowserRouter([
         element: <RequireCompletedRegistration><LogbookPage /></RequireCompletedRegistration>,
       },
       {
+        path: 'permission-test',
+        element: <PermissionTestPage />,
+      },
+      {
         path: 'admin/dictionaries',
-        element: <AdminOnly><DictionaryList /></AdminOnly>,
+        element: <RoleGuard permission="MANAGE_SETTINGS" requireAuth={true} use404Fallback={true}><DictionaryList /></RoleGuard>,
       },
       {
         path: 'admin/dictionaries/:id',
-        element: <AdminOnly><DictionaryEdit /></AdminOnly>,
+        element: <RoleGuard permission="MANAGE_SETTINGS" requireAuth={true} use404Fallback={true}><DictionaryEdit /></RoleGuard>,
       },
       {
         path: 'admin/jump-types',
-        element: <AdminOnly><JumpTypeList /></AdminOnly>,
+        element: <RoleGuard permission="MANAGE_JUMP_TYPES" requireAuth={true} use404Fallback={true}><JumpTypeList /></RoleGuard>,
       },
       {
         path: 'admin/jump-types/new',
-        element: <AdminOnly><JumpTypeEdit /></AdminOnly>,
+        element: <RoleGuard permission="MANAGE_JUMP_TYPES" requireAuth={true} use404Fallback={true}><JumpTypeEdit /></RoleGuard>,
       },
       {
         path: 'admin/jump-types/:id',
-        element: <AdminOnly><JumpTypeEdit /></AdminOnly>,
+        element: <RoleGuard permission="MANAGE_JUMP_TYPES" requireAuth={true} use404Fallback={true}><JumpTypeEdit /></RoleGuard>,
       },
       {
         path: 'admin/aircraft',
-        element: <AdminOnly><AircraftList /></AdminOnly>,
+        element: <RoleGuard permission="MANAGE_AIRCRAFT" requireAuth={true} use404Fallback={true}><AircraftList /></RoleGuard>,
       },
       {
         path: 'admin/aircraft/new',
-        element: <AdminOnly><AircraftEdit /></AdminOnly>,
+        element: <RoleGuard permission="MANAGE_AIRCRAFT" requireAuth={true} use404Fallback={true}><AircraftEdit /></RoleGuard>,
       },
       {
         path: 'admin/aircraft/:id',
-        element: <AdminOnly><AircraftEdit /></AdminOnly>,
+        element: <RoleGuard permission="MANAGE_AIRCRAFT" requireAuth={true} use404Fallback={true}><AircraftEdit /></RoleGuard>,
       },
       {
         path: 'manifesting',
-        element: <AdminOnly><ManifestingPage /></AdminOnly>,
+        element: <RoleGuard permission="MANAGE_MANIFEST" requireAuth={true} use404Fallback={true}><ManifestingPage /></RoleGuard>,
       },
       {
         path: '*',

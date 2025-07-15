@@ -15,7 +15,7 @@ import {
 import { ChevronRight } from '@mui/icons-material';
 import { User as UserType } from '@/types';
 import { formatMultiRoles, formatDateConsistent } from '@/lib/utils';
-import { getUserRoles } from '@/lib/rbac';
+import { getUserRoles } from '@/utils/userManagement';
 import User from '@/components/common/User';
 
 interface UserTableProps {

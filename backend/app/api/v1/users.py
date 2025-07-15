@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_admin_user
 from app.core.database import get_db
+from app.core.permissions import get_user_permissions
 from app.crud.users import user as user_crud
 from app.schemas.users import UserResponse, UserUpdate, UserCreate
 from app.models.users import User
@@ -23,6 +24,16 @@ def get_current_user_profile(
 ):
     """Get current user information"""
     return current_user
+
+
+@router.get("/me/permissions")
+def get_current_user_permissions(
+    current_user: User = Depends(get_current_user)
+):
+    """Get current user's permissions"""
+    user_roles = [role_assignment.role for role_assignment in current_user.roles]
+    permissions = list(get_user_permissions(user_roles))
+    return {"permissions": permissions}
 
 
 @router.put("/me", response_model=UserResponse)
