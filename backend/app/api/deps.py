@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import verify_token
 from app.crud.users import user as user_crud
-from app.models.users import User
+from app.crud.temp_tokens import temp_token as temp_token_crud
+from app.models.users import User, TemporaryToken
 from app.models.enums import UserRole
 
 security = HTTPBearer()
@@ -25,6 +26,15 @@ def get_current_user(
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    # Check if this is a temp token (should not be used for normal auth)
+    if payload.get("type") == "temp":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Temporary token not valid for this endpoint",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
     # Try to get user by user_id first (more efficient) or telegram_id as fallback
     user = None
     user_id: Optional[int] = payload.get("user_id")
@@ -40,7 +50,58 @@ def get_current_user(
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    # Check if user has completed registration
+    if not user.registration_completed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Registration not completed",
+        )
+    
     return user
+
+
+def get_temp_authenticated_user(
+    db: Session = Depends(get_db),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> TemporaryToken:
+    """
+    Get temporary token data for registration endpoints
+    """
+    payload = verify_token(credentials.credentials)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Check if this is a temp token
+    if payload.get("type") != "temp":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Valid temporary token required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Get temp token from database
+    token_data = payload.get("token_data")
+    if not token_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token format",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    temp_token = temp_token_crud.get_temp_token(db, token_data)
+    if not temp_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Temporary token not found or expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return temp_token
 
 
 def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:

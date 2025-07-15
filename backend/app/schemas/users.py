@@ -46,6 +46,7 @@ class UserCreate(UserBase):
     telegram_id: Optional[str] = None
     roles: Optional[List[UserRole]] = None
     photo_url: Optional[str] = None
+    registration_completed: Optional[bool] = False
 
 
 class UserUpdate(BaseModel, EmptyStrToNoneMixin):
@@ -65,6 +66,7 @@ class UserUpdate(BaseModel, EmptyStrToNoneMixin):
     medical_clearance_date: Optional[date] = None
     medical_clearance_is_confirmed: Optional[bool] = None
     starting_number_of_jumps: Optional[int] = None
+    registration_completed: Optional[bool] = None
     is_active: Optional[bool] = None
     roles: Optional[List[UserRole]] = None
 
@@ -75,6 +77,7 @@ class UserResponse(UserBase):
     
     id: int
     telegram_id: Optional[str] = None
+    registration_completed: Optional[bool] = False
     roles: List[UserRoleResponse] = []
     # Jump statistics
     starting_number_of_jumps: Optional[int] = 0

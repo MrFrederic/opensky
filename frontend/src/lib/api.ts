@@ -19,10 +19,23 @@ const api: AxiosInstance = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().token;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const authStore = useAuthStore.getState();
+    
+    // Use temp token for registration endpoints
+    if (config.url?.includes('/auth/registration-status') || 
+        config.url?.includes('/auth/complete-registration')) {
+      const tempToken = authStore.tempToken;
+      if (tempToken) {
+        config.headers.Authorization = `Bearer ${tempToken}`;
+      }
+    } else {
+      // Use regular token for other endpoints
+      const token = authStore.token;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
+    
     return config;
   },
   (error) => {
@@ -67,7 +80,10 @@ api.interceptors.response.use(
       
       // Check if request doesn't need token or if user is not authenticated
       if (!useAuthStore.getState().isAuthenticated || 
-          (originalRequest.url?.endsWith('/auth/telegram-auth'))) {
+          (originalRequest.url?.endsWith('/auth/telegram-auth')) ||
+          (originalRequest.url?.endsWith('/auth/telegram-verify')) ||
+          (originalRequest.url?.endsWith('/auth/complete-registration')) ||
+          (originalRequest.url?.endsWith('/auth/exchange-token'))) {
         return Promise.reject(error);
       }
 

@@ -22,6 +22,19 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
+def create_temp_token(data: dict, expires_delta: Optional[timedelta] = None):
+    """Create JWT temporary token with shorter lifespan"""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=30)  # 30 minutes for temp tokens
+    
+    to_encode.update({"exp": expire, "type": "temp"})
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    return encoded_jwt
+
+
 def create_refresh_token(user_id: int, expires_delta: Optional[timedelta] = None) -> tuple[str, str]:
     """Create a secure random refresh token"""
     # Generate a cryptographically secure random token

@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
 import { AuthTokens, User, Gender } from '@/types';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore, UserStatus } from '@/stores/auth';
 
 export interface TelegramAuthData {
   id: number;
@@ -10,6 +10,32 @@ export interface TelegramAuthData {
   photo_url?: string;
   auth_date: number;
   hash: string;
+}
+
+export interface TelegramVerificationResponse {
+  temp_token: string;
+  user_status: UserStatus;
+  expires_in: number;
+  user_data?: any;
+}
+
+export interface RegistrationCompleteRequest {
+  temp_token: string;
+  first_name: string;
+  middle_name?: string;
+  last_name: string;
+  display_name?: string;
+  date_of_birth?: string;
+  username?: string;
+  email?: string;
+  phone?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  gender?: Gender;
+  photo_url?: string;
+  medical_clearance_date?: string;
+  starting_number_of_jumps?: number;
+  roles?: string[];
 }
 
 export interface RefreshResponse {
@@ -46,7 +72,31 @@ export const authService = {
     }
   },
 
-  // Authenticate with Telegram
+  // NEW: Verify Telegram authentication and get temp token
+  verifyTelegramAuth: async (telegramData: TelegramAuthData): Promise<TelegramVerificationResponse> => {
+    const response = await api.post('/auth/telegram-verify', telegramData);
+    return response.data;
+  },
+
+  // NEW: Complete registration with temp token
+  completeRegistration: async (registrationData: RegistrationCompleteRequest): Promise<AuthTokens> => {
+    const response = await api.post('/auth/complete-registration', registrationData);
+    return response.data;
+  },
+
+  // NEW: Exchange temp token for full access
+  exchangeToken: async (tempToken: string): Promise<AuthTokens> => {
+    const response = await api.post('/auth/exchange-token', { temp_token: tempToken });
+    return response.data;
+  },
+
+  // NEW: Check registration status
+  checkRegistrationStatus: async (): Promise<{ registration_required: boolean; user_status: UserStatus; missing_fields?: string[] }> => {
+    const response = await api.get('/auth/registration-status');
+    return response.data;
+  },
+
+  // LEGACY: Authenticate with Telegram (deprecated)
   authenticateWithTelegram: async (telegramData: TelegramAuthData): Promise<AuthTokens> => {
     const response = await api.post('/auth/telegram-auth', telegramData);
     return response.data;

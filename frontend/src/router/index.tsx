@@ -5,6 +5,7 @@ import DashboardPage from '@/pages/public/DashboardPage';
 import NotFoundPage from '@/pages/public/NotFoundPage';
 import Profile from '@/pages/Profile';
 import LogbookPage from '@/pages/Logbook';
+import RegistrationVerificationPage from '@/pages/RegistrationVerificationPage';
 import UserList from '@/pages/admin/user/UserList';
 import AdminUserDetails from '@/pages/admin/user/UserEdit';
 import DictionaryList from '@/pages/admin/config/DictionaryList';
@@ -14,7 +15,8 @@ import JumpTypeEdit from '@/pages/admin/config/JumpTypeEdit';
 import AircraftList from '@/pages/admin/config/AircraftList';
 import AircraftEdit from '@/pages/admin/config/AircraftEdit';
 import ManifestingPage from '@/pages/admin/ManifestingPage';
-import { AdminOnly, AuthRequired } from '@/components/auth/RoleGuard';
+import { AdminOnly } from '@/components/auth/RoleGuard';
+import { RequireRegistration, RequireCompletedRegistration } from '@/components/auth/RegistrationGuard';
 
 export const router = createBrowserRouter([
   {
@@ -32,27 +34,27 @@ export const router = createBrowserRouter([
       },
       {
         path: 'admin/users',
-        element: <AdminOnly><UserList /></AdminOnly>,
+        element: <RequireCompletedRegistration><AdminOnly><UserList /></AdminOnly></RequireCompletedRegistration>,
       },
       {
         path: 'admin/users/new',
-        element: <AdminOnly><AdminUserDetails /></AdminOnly>,
+        element: <RequireCompletedRegistration><AdminOnly><AdminUserDetails /></AdminOnly></RequireCompletedRegistration>,
       },
       {
         path: 'admin/users/:id',
-        element: <AdminOnly><AdminUserDetails /></AdminOnly>,
+        element: <RequireCompletedRegistration><AdminOnly><AdminUserDetails /></AdminOnly></RequireCompletedRegistration>,
       },
       {
         path: 'profile',
-        element: <Profile />,
+        element: <RequireCompletedRegistration><Profile /></RequireCompletedRegistration>,
+      },
+      {
+        path: 'registration/verify',
+        element: <RequireRegistration><RegistrationVerificationPage /></RequireRegistration>,
       },
       {
         path: 'logbook',
-        element: <LogbookPage />,
-      },
-      {
-        path: 'logbook',
-        element: <AuthRequired><LogbookPage /></AuthRequired>,
+        element: <RequireCompletedRegistration><LogbookPage /></RequireCompletedRegistration>,
       },
       {
         path: 'admin/dictionaries',

@@ -24,6 +24,7 @@ class User(Base):
     medical_clearance_date = Column(Date, nullable=True)
     medical_clearance_is_confirmed = Column(Boolean, default=False)
     starting_number_of_jumps = Column(Integer, default=0, nullable=False)
+    registration_completed = Column(Boolean, default=False, nullable=False)
     is_active = Column(Boolean, default=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -34,6 +35,19 @@ class User(Base):
     # Relationships
     roles = relationship("UserRoleAssignment", foreign_keys="UserRoleAssignment.user_id", back_populates="user", cascade="all, delete-orphan")
     jumps = relationship("Jump", foreign_keys="Jump.user_id", back_populates="user")
+
+
+class TemporaryToken(Base):
+    __tablename__ = "temporary_tokens"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True, nullable=False, index=True)
+    telegram_id = Column(String, nullable=False, index=True)
+    telegram_data = Column(Text, nullable=False)  # JSON string of Telegram auth data
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    is_used = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    client_ip = Column(String, nullable=True)
 
 
 class UserRoleAssignment(Base):

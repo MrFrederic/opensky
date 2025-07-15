@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogTitle,
@@ -28,7 +29,8 @@ declare global {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
-  const { setAuth, setTokens } = useAuthStore();
+  const { setAuth, setTempToken, setTokens } = useAuthStore();
+  const navigate = useNavigate();
   const toast = useToastContext();
   const [botUsername, setBotUsername] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -47,22 +49,38 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
     }
   }, [open, toast]);
   
-  // Handle successful Telegram authentication
+  // Handle successful Telegram authentication (new two-phase approach)
   const handleTelegramAuth = async (user: TelegramAuthData) => {
     try {
-      // First, authenticate and get tokens
-      const tokens = await authService.authenticateWithTelegram(user);
+      // Phase 1: Verify Telegram and get temp token
+      const verificationResponse = await authService.verifyTelegramAuth(user);
       
-      // Set the tokens first so the API interceptor can use them for the next request
-      setTokens(tokens);
-      
-      // Get user data using the token
-      const userData = await authService.getCurrentUser();
-      
-      // Update authentication state with the real user data
-      setAuth(userData, tokens);
-      toast.success('Successfully logged in!');
-      onClose();
+      if (verificationResponse.user_status === 'existing') {
+        // For existing users, exchange temp token for full access immediately
+        const tokens = await authService.exchangeToken(verificationResponse.temp_token);
+        
+        // Set tokens first to enable authenticated requests
+        setTokens(tokens);
+        
+        // Now get the user data with the new tokens
+        const userData = await authService.getCurrentUser();
+        
+        // Update auth store with complete user data and tokens
+        setAuth(userData, tokens);
+        
+        toast.success('Successfully logged in!');
+        onClose();
+      } else {
+        // For new or incomplete users, set temp token and redirect to registration
+        const telegramUserData = {
+          ...user, // Telegram auth data
+          ...verificationResponse.user_data // Existing user data from backend
+        };
+        setTempToken(verificationResponse.temp_token, verificationResponse.user_status, telegramUserData);
+        toast.info('Please complete your profile to continue.');
+        onClose();
+        navigate('/registration/verify');
+      }
     } catch (error) {
       console.error('Authentication failed:', error);
       toast.error(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
