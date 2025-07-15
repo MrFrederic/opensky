@@ -5,21 +5,15 @@ import {
     Paper,
     Typography,
     Box,
-    TextField,
     Button,
     Grid,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
     CircularProgress,
-    InputAdornment,
 } from '@mui/material';
 import { useAuthStore } from '@/stores/auth';
 import { authService, RegistrationCompleteRequest } from '@/services/auth';
 import { useToastContext } from '@/components/common/ToastProvider';
 import { Gender } from '@/types';
-import { Phone } from '@mui/icons-material';
+import { UniversalInputField } from '@/components/common';
 
 const RegistrationVerificationPage: React.FC = () => {
     const navigate = useNavigate();
@@ -206,11 +200,11 @@ const RegistrationVerificationPage: React.FC = () => {
 
                         <Grid container spacing={3}>
                             <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
+                                <UniversalInputField
+                                    type="text"
                                     label="First Name"
-                                    value={formData.first_name}
-                                    onChange={(e) => handleInputChange('first_name', e.target.value)}
+                                    value={formData.first_name || ''}
+                                    onChange={(value) => handleInputChange('first_name', value)}
                                     error={!!formErrors.first_name}
                                     helperText={formErrors.first_name}
                                     required
@@ -218,11 +212,11 @@ const RegistrationVerificationPage: React.FC = () => {
                             </Grid>
 
                             <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
+                                <UniversalInputField
+                                    type="text"
                                     label="Last Name"
-                                    value={formData.last_name}
-                                    onChange={(e) => handleInputChange('last_name', e.target.value)}
+                                    value={formData.last_name || ''}
+                                    onChange={(value) => handleInputChange('last_name', value)}
                                     error={!!formErrors.last_name}
                                     helperText={formErrors.last_name}
                                     required
@@ -230,67 +224,57 @@ const RegistrationVerificationPage: React.FC = () => {
                             </Grid>
 
                             <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
+                                <UniversalInputField
+                                    type="text"
                                     label="Middle Name"
-                                    value={formData.middle_name}
-                                    onChange={(e) => handleInputChange('middle_name', e.target.value)}
+                                    value={formData.middle_name || ''}
+                                    onChange={(value) => handleInputChange('middle_name', value)}
                                 />
                             </Grid>
 
                             <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
+                                <UniversalInputField
+                                    type="text"
                                     label="Display Name"
-                                    value={formData.display_name}
-                                    onChange={(e) => handleInputChange('display_name', e.target.value)}
+                                    value={formData.display_name || ''}
+                                    onChange={(value) => handleInputChange('display_name', value)}
                                 />
                             </Grid>
 
                             <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
-                                    type="tel"
+                                <UniversalInputField
+                                    type="phone"
                                     label="Phone"
-                                    name="phone"
-                                    placeholder="+1234567890"
-                                    value={formData.phone}
-                                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                                    value={formData.phone || ''}
+                                    onChange={(value) => handleInputChange('phone', value)}
                                     error={!!formErrors.phone}
                                     helperText={formErrors.phone}
+                                    placeholder="+1234567890"
                                     required
-                                    InputProps={{
-                                        startAdornment: (
-                                            <InputAdornment position="start">
-                                                <Phone />
-                                            </InputAdornment>
-                                        ),
-                                    }}
                                 />
                             </Grid>
 
                             <Grid item xs={12} sm={6}>
-                                <FormControl fullWidth>
-                                    <InputLabel>Gender</InputLabel>
-                                    <Select
-                                        value={formData.gender || ''}
-                                        onChange={(e) => handleInputChange('gender', e.target.value as Gender)}
-                                        label="Gender"
-                                    >
-                                        <MenuItem value="">Select Gender</MenuItem>
-                                        <MenuItem value={Gender.MALE}>Male</MenuItem>
-                                        <MenuItem value={Gender.FEMALE}>Female</MenuItem>
-                                        <MenuItem value={Gender.OTHER}>Other</MenuItem>
-                                    </Select>
-                                </FormControl>
+                                <UniversalInputField
+                                    type="dropdown"
+                                    label="Gender"
+                                    value={formData.gender || ''}
+                                    onChange={(value) => handleInputChange('gender', value as Gender)}
+                                    options={[
+                                        { value: Gender.MALE, label: 'Male' },
+                                        { value: Gender.FEMALE, label: 'Female' },
+                                        { value: Gender.OTHER, label: 'Other' }
+                                    ]}
+                                    placeholder="Select Gender"
+                                />
                             </Grid>
 
                             <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
+                                <UniversalInputField
+                                    type="text"
                                     label="Emergency Contact Name"
-                                    value={formData.emergency_contact_name}
-                                    onChange={(e) => handleInputChange('emergency_contact_name', e.target.value)}
+                                    value={formData.emergency_contact_name || ''}
+                                    onChange={(value) => handleInputChange('emergency_contact_name', value)}
                                     error={!!formErrors.emergency_contact_name}
                                     helperText={formErrors.emergency_contact_name}
                                     required
@@ -298,11 +282,11 @@ const RegistrationVerificationPage: React.FC = () => {
                             </Grid>
 
                             <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
+                                <UniversalInputField
+                                    type="phone"
                                     label="Emergency Contact Phone"
-                                    value={formData.emergency_contact_phone}
-                                    onChange={(e) => handleInputChange('emergency_contact_phone', e.target.value)}
+                                    value={formData.emergency_contact_phone || ''}
+                                    onChange={(value) => handleInputChange('emergency_contact_phone', value)}
                                     error={!!formErrors.emergency_contact_phone}
                                     helperText={formErrors.emergency_contact_phone}
                                     required
@@ -310,25 +294,22 @@ const RegistrationVerificationPage: React.FC = () => {
                             </Grid>
 
                             <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Email"
+                                <UniversalInputField
                                     type="email"
-                                    value={formData.email}
-                                    onChange={(e) => handleInputChange('email', e.target.value)}
+                                    label="Email"
+                                    value={formData.email || ''}
+                                    onChange={(value) => handleInputChange('email', value)}
                                     error={!!formErrors.email}
                                     helperText={formErrors.email}
                                 />
                             </Grid>
 
                             <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Date of Birth"
+                                <UniversalInputField
                                     type="date"
+                                    label="Date of Birth"
                                     value={formData.date_of_birth || ''}
-                                    onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
-                                    InputLabelProps={{ shrink: true }}
+                                    onChange={(value) => handleInputChange('date_of_birth', value)}
                                 />
                             </Grid>
 

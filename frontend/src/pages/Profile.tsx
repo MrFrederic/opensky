@@ -7,16 +7,9 @@ import {
   Typography,
   Alert,
   Grid,
-  TextField,
-  InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Chip,
 } from '@mui/material';
-import { Phone, Email as Mail } from '@mui/icons-material';
-import { DateInput } from '@/components/common';
+import { UniversalInputField } from '@/components/common';
 
 import { Gender } from '@/types';
 import { useToastContext } from '@/components/common/ToastProvider';
@@ -224,54 +217,51 @@ const Profile: React.FC = () => {
         
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              required
+            <UniversalInputField
+              type="text"
               label="First Name"
-              name="first_name"
               value={formData.first_name}
-              onChange={handleInputChange}
+              onChange={(value) => handleInputChange({ target: { name: 'first_name', value } } as any)}
               error={!!errors.first_name}
               helperText={errors.first_name}
+              required
             />
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
+            <UniversalInputField
+              type="text"
               label="Middle Name"
-              name="middle_name"
               value={formData.middle_name || ''}
-              onChange={handleInputChange}
+              onChange={(value) => handleInputChange({ target: { name: 'middle_name', value } } as any)}
             />
           </Grid>
           
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              required
+            <UniversalInputField
+              type="text"
               label="Last Name"
-              name="last_name"
               value={formData.last_name}
-              onChange={handleInputChange}
+              onChange={(value) => handleInputChange({ target: { name: 'last_name', value } } as any)}
               error={!!errors.last_name}
               helperText={errors.last_name}
+              required
             />
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
+            <UniversalInputField
+              type="text"
               label="Display Name"
-              name="display_name"
               value={formData.display_name || ''}
-              onChange={handleInputChange}
+              onChange={(value) => handleInputChange({ target: { name: 'display_name', value } } as any)}
               helperText="How you prefer to be called"
             />
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <DateInput
+            <UniversalInputField
+              type="date"
               label="Date of Birth"
               value={formData.date_of_birth || ''}
               onChange={(value) => handleInputChange({ target: { name: 'date_of_birth', value } } as any)}
@@ -279,23 +269,19 @@ const Profile: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth>
-              <InputLabel>Gender</InputLabel>
-              <Select
-                name="gender"
-                value={formData.gender || ''}
-                onChange={(e) => handleInputChange({ target: { name: 'gender', value: e.target.value } } as any)}
-                label="Gender"
-              >
-                <MenuItem value="">
-                  <em>Prefer not to say</em>
-                </MenuItem>
-                <MenuItem value={Gender.MALE}>Male</MenuItem>
-                <MenuItem value={Gender.FEMALE}>Female</MenuItem>
-                <MenuItem value={Gender.OTHER}>Other</MenuItem>
-                <MenuItem value={Gender.PREFER_NOT_TO_SAY}>Prefer not to say</MenuItem>
-              </Select>
-            </FormControl>
+            <UniversalInputField
+              type="dropdown"
+              label="Gender"
+              value={formData.gender || ''}
+              onChange={(value) => handleInputChange({ target: { name: 'gender', value } } as any)}
+              options={[
+                { value: '', label: 'Prefer not to say' },
+                { value: Gender.MALE, label: 'Male' },
+                { value: Gender.FEMALE, label: 'Female' },
+                { value: Gender.OTHER, label: 'Other' },
+                { value: Gender.PREFER_NOT_TO_SAY, label: 'Prefer not to say' },
+              ]}
+            />
           </Grid>
         </Grid>
 
@@ -306,54 +292,35 @@ const Profile: React.FC = () => {
         
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
+            <UniversalInputField
+              type="telegram"
               label="Username"
-              name="username"
-              value={formData.username ? `@${formData.username}` : ''}
-              onChange={handleInputChange}
-              placeholder="@username"
+              value={formData.username || ''}
+              onChange={(value) => handleInputChange({ target: { name: 'username', value } } as any)}
+              placeholder="username"
               helperText="Your Telegram username"
             />
           </Grid>
           
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              type="email"
+            <UniversalInputField
+              type="text"
               label="Email"
-              name="email"
               value={formData.email}
-              onChange={handleInputChange}
+              onChange={(value) => handleInputChange({ target: { name: 'email', value } } as any)}
               placeholder="user@example.com"
               error={!!errors.email}
               helperText={errors.email}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Mail />
-                  </InputAdornment>
-                ),
-              }}
             />
           </Grid>
           
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              type="tel"
+            <UniversalInputField
+              type="phone"
               label="Phone"
-              name="phone"
               value={formData.phone}
-              onChange={handleInputChange}
+              onChange={(value) => handleInputChange({ target: { name: 'phone', value } } as any)}
               placeholder="+1234567890"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Phone />
-                  </InputAdornment>
-                ),
-              }}
             />
           </Grid>
         </Grid>
@@ -365,31 +332,21 @@ const Profile: React.FC = () => {
         
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
+            <UniversalInputField
+              type="text"
               label="Emergency Contact Name"
-              name="emergency_contact_name"
               value={formData.emergency_contact_name || ''}
-              onChange={handleInputChange}
+              onChange={(value) => handleInputChange({ target: { name: 'emergency_contact_name', value } } as any)}
             />
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              type="tel"
+            <UniversalInputField
+              type="phone"
               label="Emergency Contact Phone"
-              name="emergency_contact_phone"
               value={formData.emergency_contact_phone || ''}
-              onChange={handleInputChange}
+              onChange={(value) => handleInputChange({ target: { name: 'emergency_contact_phone', value } } as any)}
               placeholder="+1234567890"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Phone />
-                  </InputAdornment>
-                ),
-              }}
             />
           </Grid>
         </Grid>
@@ -400,7 +357,8 @@ const Profile: React.FC = () => {
         </Typography>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <DateInput
+            <UniversalInputField
+              type="date"
               label="Medical Clearance Date"
               value={formData.medical_clearance_date || ''}
               onChange={(value) => handleInputChange({ target: { name: 'medical_clearance_date', value } } as any)}

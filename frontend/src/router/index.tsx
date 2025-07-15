@@ -5,7 +5,6 @@ import DashboardPage from '@/pages/public/DashboardPage';
 import NotFoundPage from '@/pages/public/NotFoundPage';
 import Profile from '@/pages/Profile';
 import LogbookPage from '@/pages/Logbook';
-import PermissionTestPage from '@/pages/PermissionTestPage';
 import RegistrationVerificationPage from '@/pages/RegistrationVerificationPage';
 import UserList from '@/pages/admin/user/UserList';
 import AdminUserDetails from '@/pages/admin/user/UserEdit';
@@ -56,10 +55,6 @@ export const router = createBrowserRouter([
       {
         path: 'logbook',
         element: <RequireCompletedRegistration><LogbookPage /></RequireCompletedRegistration>,
-      },
-      {
-        path: 'permission-test',
-        element: <PermissionTestPage />,
       },
       {
         path: 'admin/dictionaries',
