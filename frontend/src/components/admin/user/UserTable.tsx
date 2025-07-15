@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { ChevronRight } from '@mui/icons-material';
 import { User as UserType } from '@/types';
-import { formatUserRoles, formatDateConsistent } from '@/lib/utils';
+import { formatMultiRoles, formatDateConsistent } from '@/lib/utils';
 import { getUserRoles } from '@/lib/rbac';
 import User from '@/components/common/User';
 
@@ -27,7 +27,7 @@ interface UserTableProps {
 const UserTable: React.FC<UserTableProps> = ({ users, onUserClick, loading = false }) => {
   const formatRoles = (user: UserType): string => {
     const roles = getUserRoles(user);
-    const roleString = formatUserRoles(roles);
+    const roleString = formatMultiRoles(roles);
     
     // Truncate roles if they're too long
     if (roleString.length > 35) {

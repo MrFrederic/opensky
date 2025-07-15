@@ -20,17 +20,18 @@ import {
 } from '@mui/icons-material';
 import { format, differenceInMinutes } from 'date-fns';
 
-import { Load, LoadStatus } from '@/types';
+import { LoadStatus } from '@/types';
+import { LoadSummary } from '@/services/manifest';
 
 interface LoadControlPanelProps {
-  selectedLoad: Load;
+  selectedLoad: LoadSummary;
   onStatusChange: (loadId: number, status: LoadStatus) => void;
   onReservedSpacesChange: (loadId: number, spaces: number) => void;
   onDepartureTimeChange?: (loadId: number, time: string) => void;
-  calculateAvailableSpaces: (load: Load) => number;
-  onEditLoad?: (load: Load) => void;
-  onDeleteLoad?: (load: Load) => void;
-  onJumpDrop?: (jump: any, load: Load, reserved: boolean) => void;
+  calculateAvailableSpaces: (load: LoadSummary) => number;
+  onEditLoad: (load: LoadSummary) => void;
+  onDeleteLoad: (load: LoadSummary) => void;
+  onJumpDrop?: (jump: any, load: LoadSummary, reserved: boolean) => void;
 }
 
 const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
@@ -50,7 +51,8 @@ const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
   const reservedSpaces = selectedLoad.remaining_reserved_spaces !== undefined
     ? selectedLoad.remaining_reserved_spaces
     : selectedLoad.reserved_spaces;
-  const totalJumpers = (selectedLoad.occupied_public_spaces || 0) + (selectedLoad.occupied_reserved_spaces || 0);
+  // Calculate occupied spaces from remaining spaces
+  const totalJumpers = (selectedLoad.total_spaces - selectedLoad.remaining_public_spaces - selectedLoad.remaining_reserved_spaces);
   const totalOpenSlots = publicSpaces + reservedSpaces;
 
   const moveToReserved = () => {
@@ -108,7 +110,7 @@ const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
       {/* Load Stats Header */}
       <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', textAlign: 'center', bgcolor: 'primary.50' }}>
         <Typography variant="h5" sx={{ mt: 1, fontWeight: 'bold' }}>
-          {selectedLoad.aircraft?.name} | 
+          {selectedLoad.aircraft_name} | 
           Jumpers: {totalJumpers} | 
           Open Slots: {totalOpenSlots} | 
           {(() => {

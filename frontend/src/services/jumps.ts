@@ -114,7 +114,7 @@ class JumpsService {
       });
     }
     
-    const response = await api.get(`/jumps?${searchParams.toString()}`);
+    const response = await api.get(`/jumps/?${searchParams.toString()}`);
     return response.data;
   }
 
@@ -124,7 +124,7 @@ class JumpsService {
   }
 
   async createJump(data: CreateJumpData): Promise<Jump> {
-    const response = await api.post('/jumps', data);
+    const response = await api.post('/jumps/', data);
     return response.data;
   }
 

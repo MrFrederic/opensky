@@ -23,20 +23,21 @@ import {
 import { differenceInMinutes } from 'date-fns';
 
 import { Load, LoadStatus, Aircraft } from '@/types';
+import { LoadSummary } from '@/services/manifest';
 
 interface LoadTableProps {
-  loads: Load[];
+  loads: LoadSummary[];
   aircraft: Aircraft[];
   statusFilter: LoadStatus | '';
   aircraftFilter: number | '';
   onStatusFilterChange: (status: LoadStatus | '') => void;
   onAircraftFilterChange: (aircraftId: number | '') => void;
-  onLoadClick?: (load: Load) => void;
+  onLoadClick?: (load: LoadSummary) => void;
   onAddLoad?: () => void;
   selectedLoadId?: number;
   loading?: boolean;
   aircraftLoading?: boolean;
-  onJumpDrop?: (jump: any, load: Load) => void;
+  onJumpDrop?: (jump: any, load: LoadSummary) => void;
 }
 
 const LoadTable: React.FC<LoadTableProps> = ({
@@ -83,9 +84,9 @@ const LoadTable: React.FC<LoadTableProps> = ({
     return differenceInMinutes(new Date(departure), new Date());
   };
 
-  const getSequenceNumber = (_load: Load, index: number) => {
-    // For now, just use index + 1. In the future, this could be based on actual daily sequence
-    return index + 1;
+  const getSequenceNumber = (load: LoadSummary) => {
+    // Use the index_number from the backend
+    return load.index_number;
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -93,7 +94,7 @@ const LoadTable: React.FC<LoadTableProps> = ({
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDrop = (e: React.DragEvent, load: Load) => {
+  const handleDrop = (e: React.DragEvent, load: LoadSummary) => {
     e.preventDefault();
     try {
       const jumpData = JSON.parse(e.dataTransfer.getData('application/json'));
@@ -201,10 +202,10 @@ const LoadTable: React.FC<LoadTableProps> = ({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loads.map((load, index) => {
+                {loads.map((load) => {
                   const isSelected = selectedLoadId === load.id;
                   const minutesUntilDept = getMinutesUntilDeparture(load.departure);
-                  const sequenceNum = getSequenceNumber(load, index);
+                  const sequenceNum = getSequenceNumber(load);
                   
                   return (
                     <TableRow
@@ -228,7 +229,7 @@ const LoadTable: React.FC<LoadTableProps> = ({
                       }}
                     >
                       <TableCell sx={{ color: 'inherit' }}>
-                        {(load.aircraft?.name || 'Unknown') + ' ' + sequenceNum}
+                        {load.aircraft_name + ' ' + sequenceNum}
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center', color: 'inherit' }}>
                         {load.total_spaces}

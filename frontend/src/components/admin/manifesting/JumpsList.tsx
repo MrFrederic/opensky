@@ -4,23 +4,19 @@ import {
   Typography,
   Button,
   List,
-  ListItem,
-  ListItemText,
-  IconButton,
-  Chip,
-  Paper,
 } from '@mui/material';
 import {
   Add as AddIcon,
-  DragIndicator as DragIcon,
 } from '@mui/icons-material';
 import { Jump } from '@/types';
+import { JumpSummary } from '@/services/manifest';
+import JumpCard from '@/components/common/JumpCard';
 
 interface JumpsListProps {
-  jumps: Jump[];
+  jumps: (Jump | JumpSummary)[];
   onAddJump: () => void;
-  onJumpDragStart: (jump: Jump) => void;
-  onJumpDrop?: (jump: Jump) => void;
+  onJumpDragStart: (jump: Jump | JumpSummary) => void;
+  onJumpDrop?: (jump: Jump | JumpSummary) => void;
   loading?: boolean;
 }
 
@@ -31,19 +27,6 @@ const JumpsList: React.FC<JumpsListProps> = ({
   onJumpDrop,
   loading = false,
 }) => {
-  const handleDragStart = (e: React.DragEvent, jump: Jump) => {
-    e.dataTransfer.setData('application/json', JSON.stringify(jump));
-    e.dataTransfer.effectAllowed = 'move';
-    onJumpDragStart(jump);
-  };
-
-  const getUserDisplayName = (jump: Jump) => {
-    if (jump.user?.display_name) {
-      return jump.user.display_name;
-    }
-    return `${jump.user?.first_name || ''} ${jump.user?.last_name || ''}`.trim();
-  };
-
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
@@ -100,46 +83,14 @@ const JumpsList: React.FC<JumpsListProps> = ({
         ) : (
           <List dense sx={{ p: 0 }}>
             {jumps.map((jump) => (
-              <ListItem
+              <JumpCard
                 key={jump.id}
-                component={Paper}
-                elevation={1}
-                draggable
-                onDragStart={(e) => handleDragStart(e, jump)}
-                sx={{
-                  mx: 1,
-                  my: 0.5,
-                  cursor: 'grab',
-                  borderRadius: 1,
-                  '&:active': {
-                    cursor: 'grabbing',
-                  },
-                  '&:hover': {
-                    backgroundColor: 'action.hover',
-                  },
-                }}
-              >
-                <IconButton size="small" sx={{ mr: 1, cursor: 'inherit' }}>
-                  <DragIcon fontSize="small" />
-                </IconButton>
-                <ListItemText
-                  primary={getUserDisplayName(jump)}
-                  secondary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                      <Chip
-                        label={jump.jump_type?.short_name || 'Unknown'}
-                        size="small"
-                        variant="outlined"
-                      />
-                      {jump.comment && (
-                        <Typography variant="caption" color="text.secondary">
-                          {jump.comment}
-                        </Typography>
-                      )}
-                    </Box>
-                  }
-                />
-              </ListItem>
+                jump={jump}
+                isDraggable={true}
+                variant="default"
+                onDragStart={(_e, jump) => onJumpDragStart(jump as Jump | JumpSummary)}
+                sx={{ mx: 1, my: 0.5 }}
+              />
             ))}
           </List>
         )}

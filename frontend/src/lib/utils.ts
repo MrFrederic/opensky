@@ -48,7 +48,7 @@ export function formatUserName(user: { first_name: string; last_name: string; us
   return fullName || user.username || 'Unknown User';
 }
 
-export function formatUserRoles(roles: string[]): string {
+export function formatMultiRoles(roles: string[]): string {
   const roleLabels: Record<string, string> = {
     tandem_jumper: 'Tandem Jumper',
     aff_student: 'AFF Student',
@@ -74,7 +74,7 @@ export function formatSingleRole(role: string): string {
     administrator: 'Administrator',
   };
   
-  return roleLabels[role] || role.replace(/_/g, ' ').toUpperCase();
+  return roleLabels[role] || role;
 }
 
 // Legacy function - deprecated, use formatUserRoles instead

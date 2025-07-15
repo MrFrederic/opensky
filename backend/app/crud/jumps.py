@@ -145,7 +145,7 @@ class CRUDJump(CRUDBase[Jump, JumpCreate, JumpUpdate]):
         #    )
         
         # Check if user already has a jump in this load
-        user_in_load = db.query(Jump).filter(Jump.user_id == jump.user_id, Jump.load_id == load_id).first()
+        user_in_load = db.query(Jump).filter(Jump.user_id == jump.user_id, Jump.load_id == load_id, Jump.id != jump.id).first()
         if user_in_load:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

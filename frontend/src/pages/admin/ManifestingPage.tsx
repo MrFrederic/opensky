@@ -18,6 +18,7 @@ import { useToastContext } from '@/components/common/ToastProvider';
 import { loadsService } from '@/services/loads';
 import { aircraftService } from '@/services/aircraft';
 import { jumpsService } from '@/services/jumps';
+import { manifestService } from '@/services/manifest';
 import LoadTable from '@/components/admin/manifesting/LoadTable';
 import LoadControlPanel from '@/components/admin/manifesting/LoadControlPanel';
 import LoadModal from '@/components/admin/manifesting/LoadModal';
@@ -26,6 +27,7 @@ import JumpsList from '@/components/admin/manifesting/JumpsList';
 import LoadJumpsArea from '@/components/admin/manifesting/LoadJumpsArea';
 import StaffAssignmentModal from '@/components/admin/manifesting/StaffAssignmentModal';
 import { Load, LoadStatus, CreateLoadData, UpdateLoadData, Jump, CreateJumpData, UpdateJumpData } from '@/types';
+import { LoadSummary, JumpSummary } from '@/services/manifest';
 import { getErrorMessage } from '@/lib/error-utils';
 
 const ManifestingPage: React.FC = () => {
@@ -48,19 +50,21 @@ const ManifestingPage: React.FC = () => {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [loadToDelete, setLoadToDelete] = useState<Load | null>(null);
 
-    // Selected load state
-    const [selectedLoad, setSelectedLoad] = useState<Load | null>(null);
+    // Selected load state - now using LoadSummary instead of Load
+    const [selectedLoad, setSelectedLoad] = useState<LoadSummary | null>(null);
 
     // Drag and drop state
     const [draggedJump, setDraggedJump] = useState<Jump | null>(null);
 
-    // Fetch loads with filters
-    const loadsQuery = useQuery({
-        queryKey: ['loads', statusFilter, aircraftFilter],
-        queryFn: () => loadsService.getLoads({
-            status: statusFilter || undefined,
-            aircraft_id: aircraftFilter || undefined,
-            limit: 100,
+    // Fetch all manifest data with a single endpoint
+    const manifestQuery = useQuery({
+        queryKey: ['manifest', statusFilter, aircraftFilter, selectedLoad?.id],
+        queryFn: () => manifestService.getManifestData({
+            hide_old_loads: true,
+            aircraft_ids: aircraftFilter ? [aircraftFilter] : undefined,
+            load_statuses: statusFilter ? [statusFilter] : undefined,
+            selected_load_id: selectedLoad?.id,
+            is_manifested: true,
         }),
         refetchInterval: 5000, // Refetch every 5 seconds
         staleTime: 0, // Always consider data stale to ensure visual updates
@@ -73,28 +77,11 @@ const ManifestingPage: React.FC = () => {
         queryFn: () => aircraftService.getAircraft({ limit: 100 }),
     });
 
-    // Fetch manifested jumps without loads
-    const manifestedJumpsQuery = useQuery({
-        queryKey: ['manifested-jumps'],
-        queryFn: () => jumpsService.getJumps({ is_manifested: true, has_load: false }),
-        refetchInterval: 5000,
-        staleTime: 0,
-    });
-
-    // Fetch jumps for selected load
-    const loadJumpsQuery = useQuery({
-        queryKey: ['load-jumps', selectedLoad?.id],
-        queryFn: () => selectedLoad ? jumpsService.getLoadJumps(selectedLoad.id) : Promise.resolve([]),
-        enabled: !!selectedLoad,
-        refetchInterval: 5000,
-        staleTime: 0,
-    });
-
     // Create load mutation
     const createLoadMutation = useMutation({
         mutationFn: loadsService.createLoad,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['loads'] });
+            queryClient.invalidateQueries({ queryKey: ['manifest'] });
             toast.success('Load created successfully');
             setLoadModalOpen(false);
             setEditingLoad(null);
@@ -109,7 +96,7 @@ const ManifestingPage: React.FC = () => {
         mutationFn: ({ id, data }: { id: number; data: UpdateLoadData }) =>
             loadsService.updateLoad(id, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['loads'] });
+            queryClient.invalidateQueries({ queryKey: ['manifest'] });
             toast.success('Load updated successfully');
             setLoadModalOpen(false);
             setEditingLoad(null);
@@ -124,7 +111,7 @@ const ManifestingPage: React.FC = () => {
         mutationFn: ({ id, status }: { id: number; status: LoadStatus }) =>
             loadsService.updateLoadStatus(id, status),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['loads'] });
+            queryClient.invalidateQueries({ queryKey: ['manifest'] });
             toast.success('Load status updated');
         },
         onError: (error) => {
@@ -137,7 +124,7 @@ const ManifestingPage: React.FC = () => {
         mutationFn: ({ id, spaces }: { id: number; spaces: number }) =>
             loadsService.updateLoadSpaces(id, spaces),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['loads'] });
+            queryClient.invalidateQueries({ queryKey: ['manifest'] });
             toast.success('Reserved spaces updated');
         },
         onError: (error) => {
@@ -149,7 +136,7 @@ const ManifestingPage: React.FC = () => {
     const deleteLoadMutation = useMutation({
         mutationFn: loadsService.deleteLoad,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['loads'] });
+            queryClient.invalidateQueries({ queryKey: ['manifest'] });
             toast.success('Load deleted successfully');
             setDeleteDialogOpen(false);
             setLoadToDelete(null);
@@ -163,7 +150,7 @@ const ManifestingPage: React.FC = () => {
     const createJumpMutation = useMutation({
         mutationFn: jumpsService.createJump,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['manifested-jumps'] });
+            queryClient.invalidateQueries({ queryKey: ['manifest'] });
             toast.success('Jump created successfully');
             setJumpModalOpen(false);
             setEditingJump(null);
@@ -178,8 +165,7 @@ const ManifestingPage: React.FC = () => {
         mutationFn: ({ id, data }: { id: number; data: UpdateJumpData }) =>
             jumpsService.updateJump(id, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['manifested-jumps'] });
-            queryClient.invalidateQueries({ queryKey: ['load-jumps'] });
+            queryClient.invalidateQueries({ queryKey: ['manifest'] });
             toast.success('Jump updated successfully');
             setJumpModalOpen(false);
             setEditingJump(null);
@@ -203,9 +189,7 @@ const ManifestingPage: React.FC = () => {
                 staff_assignments: staffAssignments 
             }),
         onSuccess: (response) => {
-            queryClient.invalidateQueries({ queryKey: ['manifested-jumps'] });
-            queryClient.invalidateQueries({ queryKey: ['load-jumps'] });
-            queryClient.invalidateQueries({ queryKey: ['loads'] });
+            queryClient.invalidateQueries({ queryKey: ['manifest'] });
             toast.success(response.message);
             if (response.warning) {
                 toast.warning(response.warning);
@@ -226,9 +210,7 @@ const ManifestingPage: React.FC = () => {
     const removeJumpMutation = useMutation({
         mutationFn: jumpsService.removeJumpFromLoad,
         onSuccess: (response) => {
-            queryClient.invalidateQueries({ queryKey: ['manifested-jumps'] });
-            queryClient.invalidateQueries({ queryKey: ['load-jumps'] });
-            queryClient.invalidateQueries({ queryKey: ['loads'] });
+            queryClient.invalidateQueries({ queryKey: ['manifest'] });
             toast.success(response.message);
         },
         onError: (error) => {
@@ -238,10 +220,10 @@ const ManifestingPage: React.FC = () => {
 
     // Handle query errors with toast
     useEffect(() => {
-        if (loadsQuery.error) {
-            toast.error(`Failed to load loads: ${getErrorMessage(loadsQuery.error)}`);
+        if (manifestQuery.error) {
+            toast.error(`Failed to load manifest data: ${getErrorMessage(manifestQuery.error)}`);
         }
-    }, [loadsQuery.error, toast]);
+    }, [manifestQuery.error, toast]);
 
     const handleCreateLoad = () => {
         setEditingLoad(null);
@@ -258,7 +240,7 @@ const ManifestingPage: React.FC = () => {
         setDeleteDialogOpen(true);
     };
 
-    const handleLoadClick = (load: Load) => {
+    const handleLoadClick = (load: LoadSummary) => {
         setSelectedLoad(load);
     };
 
@@ -277,9 +259,8 @@ const ManifestingPage: React.FC = () => {
         });
     };
 
-    const calculateAvailableSpaces = (load: Load) => {
-        const totalSpaces = load.aircraft?.max_load || 0;
-        return totalSpaces - load.reserved_spaces;
+    const calculateAvailableSpaces = (load: LoadSummary) => {
+        return load.total_spaces - load.reserved_spaces;
     };
 
     const handleLoadSave = (data: CreateLoadData | UpdateLoadData) => {
@@ -315,28 +296,28 @@ const ManifestingPage: React.FC = () => {
         }
     };
 
-    const handleJumpDragStart = (jump: Jump) => {
-        setDraggedJump(jump);
+    const handleJumpDragStart = (jump: Jump | JumpSummary) => {
+        setDraggedJump(jump as Jump); // Cast for now since state expects Jump
     };
 
-    const handleJumpDropToLoad = (jump: Jump) => {
+    const handleJumpDropToLoad = (jump: Jump | JumpSummary) => {
         if (selectedLoad) {
-            checkAndAssignJump(jump, selectedLoad.id);
+            checkAndAssignJump(jump as Jump, selectedLoad.id); // Cast for now
         }
     };
 
-    const handleJumpDropToList = (jump: Jump) => {
-        if (jump.load_id) {
+    const handleJumpDropToList = (jump: Jump | JumpSummary) => {
+        if ('load_id' in jump && jump.load_id) {
             removeJumpMutation.mutate(jump.id);
         }
     };
 
-    const handleJumpDropToLoadTable = (jump: any, load: Load) => {
-        checkAndAssignJump(jump, load.id);
+    const handleJumpDropToLoadTable = (jump: any, load: LoadSummary) => {
+        checkAndAssignJump(jump as Jump, load.id); // Cast for now
     };
 
-    const handleJumpDropOnSpaces = (jump: any, load: Load, reserved: boolean) => {
-        checkAndAssignJump(jump, load.id, reserved);
+    const handleJumpDropOnSpaces = (jump: any, load: LoadSummary, reserved: boolean) => {
+        checkAndAssignJump(jump as Jump, load.id, reserved); // Cast for now
     };
 
     const checkAndAssignJump = (jump: Jump, loadId: number, reserved: boolean = false) => {
@@ -368,32 +349,44 @@ const ManifestingPage: React.FC = () => {
         setPendingJumpAssignment(null);
     };
 
-    const loads = loadsQuery.data || [];
+    const manifestData = manifestQuery.data;
+    const loads = manifestData?.loads || [];
     const aircraft = aircraftQuery.data || [];
-    const manifestedJumps = manifestedJumpsQuery.data || [];
-    const loadJumps = loadJumpsQuery.data || [];
-    const isLoading = loadsQuery.isLoading;
+    const manifestedJumps = manifestData?.unassigned_jumps || [];
+    const loadJumps = manifestData?.selected_load_jumps || [];
+    const isLoading = manifestQuery.isLoading;
 
     // Debug log for data updates
     useEffect(() => {
-        if (loadsQuery.dataUpdatedAt) {
-            console.log('Loads data updated at:', new Date(loadsQuery.dataUpdatedAt).toLocaleTimeString());
+        if (manifestQuery.dataUpdatedAt) {
+            console.log('Manifest data updated at:', new Date(manifestQuery.dataUpdatedAt).toLocaleTimeString());
         }
-    }, [loadsQuery.dataUpdatedAt]);
+    }, [manifestQuery.dataUpdatedAt]);
 
     // Update selected load when loads change
     useEffect(() => {
         if (selectedLoad && loads.length > 0) {
             const updatedLoad = loads.find(l => l.id === selectedLoad.id);
             if (updatedLoad) {
-                // Force update even if the object reference is the same
-                setSelectedLoad(updatedLoad);
+                // Update selected load to maintain sync with the list
+                setSelectedLoad(updatedLoad as any); // Type assertion for compatibility
             } else {
                 // Load was deleted, clear selection
                 setSelectedLoad(null);
             }
         }
-    }, [loads]);
+    }, [loads, selectedLoad]);
+
+    // Sync selected load with backend's default selection
+    useEffect(() => {
+        if (manifestData?.selected_load && !selectedLoad) {
+            // Backend selected a default load, sync it to frontend state
+            const backendSelectedLoad = loads.find(l => l.id === manifestData.selected_load);
+            if (backendSelectedLoad) {
+                setSelectedLoad(backendSelectedLoad);
+            }
+        }
+    }, [manifestData?.selected_load, selectedLoad, loads]);
 
     return (
         <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -402,7 +395,7 @@ const ManifestingPage: React.FC = () => {
                 {/* First Column - Load List */}
                 <Box sx={{ width: 300, borderRight: 1, borderColor: 'divider' }}>
                     <LoadTable
-                        key={`loads-${loads.length}-${loadsQuery.dataUpdatedAt}`} // Force re-render when data updates
+                        key={`loads-${loads.length}-${manifestQuery.dataUpdatedAt}`} // Force re-render when data updates
                         loads={loads}
                         aircraft={aircraft}
                         statusFilter={statusFilter}
@@ -429,8 +422,44 @@ const ManifestingPage: React.FC = () => {
                                 onReservedSpacesChange={handleReservedSpacesChange}
                                 onDepartureTimeChange={handleDepartureTimeChange}
                                 calculateAvailableSpaces={calculateAvailableSpaces}
-                                onEditLoad={handleEditLoad}
-                                onDeleteLoad={handleDeleteLoad}
+                                onEditLoad={(load) => {
+                                    // Convert LoadSummary to Load for the modal - would be better to fetch full data
+                                    const fullLoad: Load = {
+                                        id: load.id,
+                                        departure: load.departure,
+                                        aircraft_id: load.aircraft_id,
+                                        status: load.status,
+                                        reserved_spaces: load.reserved_spaces,
+                                        aircraft: { id: load.aircraft_id, name: load.aircraft_name, type: 'plane' as any, max_load: load.total_spaces, created_at: '', updated_at: '' },
+                                        created_at: '',
+                                        updated_at: '',
+                                        total_spaces: load.total_spaces,
+                                        occupied_public_spaces: load.total_spaces - load.remaining_public_spaces - load.remaining_reserved_spaces,
+                                        occupied_reserved_spaces: load.reserved_spaces - load.remaining_reserved_spaces,
+                                        remaining_public_spaces: load.remaining_public_spaces,
+                                        remaining_reserved_spaces: load.remaining_reserved_spaces,
+                                    };
+                                    handleEditLoad(fullLoad);
+                                }}
+                                onDeleteLoad={(load) => {
+                                    // Similar conversion for delete
+                                    const fullLoad: Load = {
+                                        id: load.id,
+                                        departure: load.departure,
+                                        aircraft_id: load.aircraft_id,
+                                        status: load.status,
+                                        reserved_spaces: load.reserved_spaces,
+                                        aircraft: { id: load.aircraft_id, name: load.aircraft_name, type: 'plane' as any, max_load: load.total_spaces, created_at: '', updated_at: '' },
+                                        created_at: '',
+                                        updated_at: '',
+                                        total_spaces: load.total_spaces,
+                                        occupied_public_spaces: load.total_spaces - load.remaining_public_spaces - load.remaining_reserved_spaces,
+                                        occupied_reserved_spaces: load.reserved_spaces - load.remaining_reserved_spaces,
+                                        remaining_public_spaces: load.remaining_public_spaces,
+                                        remaining_reserved_spaces: load.remaining_reserved_spaces,
+                                    };
+                                    handleDeleteLoad(fullLoad);
+                                }}
                                 onJumpDrop={handleJumpDropOnSpaces}
                             />
 
@@ -439,7 +468,7 @@ const ManifestingPage: React.FC = () => {
                                 jumps={loadJumps}
                                 onJumpDragStart={handleJumpDragStart}
                                 onDrop={handleJumpDropToLoad}
-                                loading={loadJumpsQuery.isLoading}
+                                loading={manifestQuery.isLoading}
                             />
                         </>
                     ) : (
@@ -470,7 +499,7 @@ const ManifestingPage: React.FC = () => {
                         onAddJump={handleCreateJump}
                         onJumpDragStart={handleJumpDragStart}
                         onJumpDrop={handleJumpDropToList}
-                        loading={manifestedJumpsQuery.isLoading}
+                        loading={manifestQuery.isLoading}
                     />
                 </Box>
 
