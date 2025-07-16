@@ -11,6 +11,7 @@ from app.schemas.jumps import (
     JumpLoadAssignment,
     JumpLoadAssignmentResponse,
     JumpLoadRemovalResponse,
+    JumpLoadRemovalRequest,
     LogbookResponse,
     LogbookJumpEntry
 )
@@ -268,14 +269,16 @@ def assign_jump_to_load(
 @router.post("/{jump_id}/remove-from-load", response_model=JumpLoadRemovalResponse)
 def remove_jump_from_load(
     jump_id: int,
+    removal_request: JumpLoadRemovalRequest = JumpLoadRemovalRequest(),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Remove jump from load and delete linked staff jumps"""
+    """Remove jump from load and optionally clear staff assignments"""
     result = jump_crud.remove_from_load(
         db,
         jump_id=jump_id,
-        user_id=current_user.id
+        user_id=current_user.id,
+        clear_staff_assignments=removal_request.clear_staff_assignments
     )
     
     return JumpLoadRemovalResponse(**result)

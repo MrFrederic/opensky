@@ -64,6 +64,10 @@ export interface JumpLoadAssignmentResponse {
   assigned_jump_ids: number[];
 }
 
+export interface JumpLoadRemovalRequest {
+  clear_staff_assignments?: boolean;
+}
+
 export interface JumpLoadRemovalResponse {
   success: boolean;
   message: string;
@@ -146,8 +150,10 @@ class JumpsService {
     return response.data;
   }
 
-  async removeJumpFromLoad(jumpId: number): Promise<JumpLoadRemovalResponse> {
-    const response = await api.post(`/jumps/${jumpId}/remove-from-load`);
+  async removeJumpFromLoad(jumpId: number, clearStaffAssignments: boolean = false): Promise<JumpLoadRemovalResponse> {
+    const response = await api.post(`/jumps/${jumpId}/remove-from-load`, {
+      clear_staff_assignments: clearStaffAssignments
+    });
     return response.data;
   }
 

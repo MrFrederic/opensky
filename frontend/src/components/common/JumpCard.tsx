@@ -10,6 +10,8 @@ import {
 } from '@mui/material';
 import {
   DragIndicator as DragIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { Jump } from '@/types';
 import { JumpSummary } from '@/services/manifest';
@@ -44,8 +46,11 @@ export interface JumpCardProps {
   elevation?: number;
   onDragStart?: (e: React.DragEvent, jump: JumpCardData) => void;
   onClick?: (jump: JumpCardData) => void;
+  onEdit?: (jump: JumpCardData) => void;
+  onDelete?: (jump: JumpCardData) => void;
   showReservedStatus?: boolean;
   showComment?: boolean;
+  showActions?: boolean;
   customChips?: React.ReactNode[];
   sx?: object;
 }
@@ -57,9 +62,11 @@ const JumpCard: React.FC<JumpCardProps> = ({
   variant = 'default',
   elevation = 1,
   onDragStart,
-  onClick,
+  onEdit,
+  onDelete,
   showReservedStatus = true,
   showComment = true,
+  showActions = false,
   customChips = [],
   sx = {},
 }) => {
@@ -70,8 +77,14 @@ const JumpCard: React.FC<JumpCardProps> = ({
     onDragStart(e, jump);
   };
 
-  const handleClick = () => {
-    onClick?.(jump);
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent drag/click events
+    onEdit?.(jump);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent drag/click events
+    onDelete?.(jump);
   };
 
   const getVariantStyles = () => {
@@ -170,10 +183,9 @@ const JumpCard: React.FC<JumpCardProps> = ({
       elevation={elevation}
       draggable={isDraggable}
       onDragStart={handleDragStart}
-      onClick={handleClick}
       sx={{
         mb: 0.5,
-        cursor: isDraggable ? 'grab' : onClick ? 'pointer' : 'default',
+        cursor: isDraggable ? 'grab' : 'default',
         borderRadius: 1,
         width: '100%',
         '&:active': isDraggable ? {
@@ -204,6 +216,42 @@ const JumpCard: React.FC<JumpCardProps> = ({
         primary={renderPrimary()}
         secondary={renderSecondary()}
       />
+
+      {/* Action Buttons */}
+      {showActions && !isStaff && (
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          {onEdit && (
+            <IconButton
+              size="small"
+              onClick={handleEdit}
+              sx={{ 
+                p: 0.5,
+                color: variant === 'assigned' ? 'inherit' : 'action.active',
+                '&:hover': {
+                  backgroundColor: variant === 'assigned' ? 'rgba(255,255,255,0.1)' : 'action.hover'
+                }
+              }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          )}
+          {onDelete && (
+            <IconButton
+              size="small"
+              onClick={handleDelete}
+              sx={{ 
+                p: 0.5,
+                color: variant === 'assigned' ? 'inherit' : 'error.main',
+                '&:hover': {
+                  backgroundColor: variant === 'assigned' ? 'rgba(255,255,255,0.1)' : 'error.light'
+                }
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Box>
+      )}
     </ListItem>
   );
 };

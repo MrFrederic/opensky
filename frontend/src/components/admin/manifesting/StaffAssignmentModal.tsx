@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { Jump, User } from '@/types';
+import { JumpSummary } from '@/services/manifest';
 import { usersService } from '@/services/users';
 import { formatSingleRole, formatUserName } from '@/lib/utils';
 
@@ -21,7 +22,7 @@ interface StaffAssignmentModalProps {
   open: boolean;
   onClose: () => void;
   onConfirm: (staffAssignments: Record<string, number>) => void;
-  jump: Jump | null;
+  jump: Jump | JumpSummary | null;
   loading?: boolean;
 }
 
@@ -30,7 +31,7 @@ const getUserDisplayName = (user: User): string => {
   return formatUserName(user);
 };
 
-const getStaffKey = (index: number): string => `staff_${index}`;
+const getStaffKey = (additionalStaffId: number): string => `staff_${additionalStaffId}`;
 
 const StaffAssignmentModal: React.FC<StaffAssignmentModalProps> = ({
   open,
@@ -52,15 +53,22 @@ const StaffAssignmentModal: React.FC<StaffAssignmentModalProps> = ({
 
   // Reset assignments when modal opens or jump changes
   useEffect(() => {
-    if (open) {
-      setStaffAssignments({});
+    if (open && jump) {
+      // Pre-populate with existing staff assignments if available
+      const existingAssignments: Record<string, number> = {};
+      if (jump.staff_assignments) {
+        Object.entries(jump.staff_assignments).forEach(([additionalStaffId, userId]) => {
+          existingAssignments[getStaffKey(parseInt(additionalStaffId))] = userId;
+        });
+      }
+      setStaffAssignments(existingAssignments);
     }
   }, [open, jump]);
 
-  const handleStaffAssignment = (staffIndex: number, userId: number | null) => {
+  const handleStaffAssignment = (additionalStaffId: number, userId: number | null) => {
     setStaffAssignments(prev => {
       const updated = { ...prev };
-      const key = getStaffKey(staffIndex);
+      const key = getStaffKey(additionalStaffId);
       if (userId) {
         updated[key] = userId;
       } else {
@@ -71,25 +79,26 @@ const StaffAssignmentModal: React.FC<StaffAssignmentModalProps> = ({
   };
 
   const handleConfirm = () => {
-    // Convert index-based assignments to role-based for API
-    const roleAssignments: Record<string, number> = {};
-    additionalStaff.forEach((staff, index) => {
-      const userId = staffAssignments[getStaffKey(index)];
+    // Convert additional_staff_id-based assignments to the format expected by backend
+    const staffAssignmentsByAdditionalStaffId: Record<string, number> = {};
+    additionalStaff.forEach((staff) => {
+      const userId = staffAssignments[getStaffKey(staff.id)];
       if (userId) {
-        roleAssignments[staff.staff_required_role] = userId;
+        staffAssignmentsByAdditionalStaffId[staff.id.toString()] = userId;
       }
     });
-    onConfirm(roleAssignments);
+    onConfirm(staffAssignmentsByAdditionalStaffId);
   };
 
-  // Simplified completion check
-  const isComplete = useMemo(() => {
-    return additionalStaff.length === 0 || 
-           additionalStaff.every((_, index) => staffAssignments[getStaffKey(index)]);
-  }, [additionalStaff, staffAssignments]);
-
   // Extract filtering logic to separate function for clarity
-  const getAvailableUsersForStaff = (staffIndex: number, requiredRole: string) => {
+  const getAvailableUsersForStaff = (additionalStaffId: number, requiredRole: string) => {
+    // Get parent jump user ID
+    const parentJumpUserId = jump && 'user' in jump && jump.user 
+      ? jump.user.id 
+      : jump && 'user_id' in jump 
+      ? jump.user_id 
+      : null;
+
     // Users with the required role
     const roleUsers = allUsers.filter((user: User) => 
       user.roles?.some(userRole => userRole.role === requiredRole)
@@ -97,15 +106,63 @@ const StaffAssignmentModal: React.FC<StaffAssignmentModalProps> = ({
     
     // Users already assigned to other positions
     const assignedUserIds = Object.entries(staffAssignments)
-      .filter(([key]) => key !== getStaffKey(staffIndex))
+      .filter(([key]) => key !== getStaffKey(additionalStaffId))
       .map(([, userId]) => userId);
 
-    // Available users (with role, not assigned elsewhere)
-    return roleUsers.filter(user => !assignedUserIds.includes(user.id));
+    // Available users (with role, not assigned elsewhere, not the parent jump user)
+    return roleUsers.filter(user => 
+      !assignedUserIds.includes(user.id) && 
+      user.id !== parentJumpUserId
+    );
   };
 
-  const getSelectedUser = (staffIndex: number): User | null => {
-    const userId = staffAssignments[getStaffKey(staffIndex)];
+  // Validation function for duplicate users
+  const getValidationMessage = (additionalStaffId: number): string | null => {
+    const selectedUserId = staffAssignments[getStaffKey(additionalStaffId)];
+    if (!selectedUserId) return null;
+
+    // Check if user is the parent jump user
+    const parentJumpUserId = jump && 'user' in jump && jump.user 
+      ? jump.user.id 
+      : jump && 'user_id' in jump 
+      ? jump.user_id 
+      : null;
+
+    if (selectedUserId === parentJumpUserId) {
+      return "Staff user cannot be the same as the jump user";
+    }
+
+    // Check if user is selected for another position
+    const duplicateKeys = Object.entries(staffAssignments)
+      .filter(([key, userId]) => key !== getStaffKey(additionalStaffId) && userId === selectedUserId)
+      .map(([key]) => key);
+
+    if (duplicateKeys.length > 0) {
+      return "This user is already assigned to another staff position";
+    }
+
+    return null;
+  };
+
+  // Simplified completion check
+  const isComplete = useMemo(() => {
+    if (additionalStaff.length === 0) return true;
+    
+    // Check if all positions are filled
+    const allPositionsFilled = additionalStaff.every((staff) => 
+      staffAssignments[getStaffKey(staff.id)]
+    );
+    
+    // Check if there are any validation errors
+    const hasValidationErrors = additionalStaff.some((staff) => 
+      getValidationMessage(staff.id) !== null
+    );
+    
+    return allPositionsFilled && !hasValidationErrors;
+  }, [additionalStaff, staffAssignments]);
+
+  const getSelectedUser = (additionalStaffId: number): User | null => {
+    const userId = staffAssignments[getStaffKey(additionalStaffId)];
     return userId ? allUsers.find(user => user.id === userId) || null : null;
   };
 
@@ -118,15 +175,23 @@ const StaffAssignmentModal: React.FC<StaffAssignmentModalProps> = ({
     return null;
   }
 
+  const jumpUserName = 'user' in jump && jump.user 
+    ? formatUserName(jump.user) 
+    : 'user_name' in jump 
+    ? jump.user_name 
+    : 'Unknown User';
+
+  const jumpTypeName = jump.jump_type?.name || 'Unknown Jump Type';
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        Assign Staff for {formatUserName(jump.user!)}'s Jump
+        Assign Staff for {jumpUserName}'s Jump
       </DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 1 }}>
           <Typography variant="body1" gutterBottom>
-            Jump Type: <strong>{jump.jump_type?.name}</strong>
+            Jump Type: <strong>{jumpTypeName}</strong>
           </Typography>
           
           {additionalStaff.length === 0 ? (
@@ -141,13 +206,14 @@ const StaffAssignmentModal: React.FC<StaffAssignmentModalProps> = ({
 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {additionalStaff.map((staff, index) => {
-                  const availableUsers = getAvailableUsersForStaff(index, staff.staff_required_role);
-                  const selectedUser = getSelectedUser(index);
+                  const availableUsers = getAvailableUsersForStaff(staff.id, staff.staff_required_role);
+                  const selectedUser = getSelectedUser(staff.id);
                   const roleCount = getRoleCount(staff.staff_required_role);
                   const roleName = formatSingleRole(staff.staff_required_role);
+                  const validationMessage = getValidationMessage(staff.id);
 
                   return (
-                    <Box key={getStaffKey(index)}>
+                    <Box key={getStaffKey(staff.id)}>
                       <Typography variant="subtitle2" gutterBottom>
                         {roleName} *
                         {roleCount > 1 && <span> #{index + 1}</span>}
@@ -155,7 +221,7 @@ const StaffAssignmentModal: React.FC<StaffAssignmentModalProps> = ({
                       <Autocomplete
                         value={selectedUser}
                         onChange={(_, newValue) => 
-                          handleStaffAssignment(index, newValue?.id || null)
+                          handleStaffAssignment(staff.id, newValue?.id || null)
                         }
                         options={availableUsers}
                         getOptionLabel={getUserDisplayName}
@@ -165,6 +231,8 @@ const StaffAssignmentModal: React.FC<StaffAssignmentModalProps> = ({
                             {...params}
                             label={`Select ${roleName}`}
                             required
+                            error={!!validationMessage}
+                            helperText={validationMessage}
                             InputProps={{
                               ...params.InputProps,
                               endAdornment: (

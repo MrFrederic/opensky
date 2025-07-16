@@ -26,6 +26,7 @@ import JumpModal from '@/components/admin/manifesting/JumpModal';
 import JumpsList from '@/components/admin/manifesting/JumpsList';
 import LoadJumpsArea from '@/components/admin/manifesting/LoadJumpsArea';
 import StaffAssignmentModal from '@/components/admin/manifesting/StaffAssignmentModal';
+import JumpRemovalDialog from '@/components/admin/manifesting/JumpRemovalDialog';
 import { Load, LoadStatus, CreateLoadData, UpdateLoadData, Jump, CreateJumpData, UpdateJumpData } from '@/types';
 import { LoadSummary, JumpSummary } from '@/services/manifest';
 import { getErrorMessage } from '@/lib/error-utils';
@@ -44,7 +45,9 @@ const ManifestingPage: React.FC = () => {
     const [jumpModalOpen, setJumpModalOpen] = useState(false);
     const [editingJump, setEditingJump] = useState<Jump | null>(null);
     const [staffAssignmentModalOpen, setStaffAssignmentModalOpen] = useState(false);
-    const [pendingJumpAssignment, setPendingJumpAssignment] = useState<{jump: Jump, loadId: number, reserved?: boolean} | null>(null);
+    const [jumpRemovalDialogOpen, setJumpRemovalDialogOpen] = useState(false);
+    const [pendingJumpAssignment, setPendingJumpAssignment] = useState<{jump: Jump | JumpSummary, loadId: number, reserved?: boolean} | null>(null);
+    const [pendingJumpRemoval, setPendingJumpRemoval] = useState<Jump | JumpSummary | null>(null);
 
     // Delete confirmation dialog
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -175,6 +178,20 @@ const ManifestingPage: React.FC = () => {
         },
     });
 
+    // Delete jump mutation
+    const deleteJumpMutation = useMutation({
+        mutationFn: jumpsService.deleteJump,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['manifest'] });
+            toast.success('Jump deleted successfully');
+            setJumpModalOpen(false);
+            setEditingJump(null);
+        },
+        onError: (error) => {
+            toast.error(`Failed to delete jump: ${getErrorMessage(error)}`);
+        },
+    });
+
     // Assign jump to load mutation
     const assignJumpMutation = useMutation({
         mutationFn: ({ jumpId, loadId, reserved, staffAssignments }: { 
@@ -208,13 +225,20 @@ const ManifestingPage: React.FC = () => {
 
     // Remove jump from load mutation
     const removeJumpMutation = useMutation({
-        mutationFn: jumpsService.removeJumpFromLoad,
+        mutationFn: ({ jumpId, clearStaffAssignments }: { jumpId: number; clearStaffAssignments?: boolean }) =>
+            jumpsService.removeJumpFromLoad(jumpId, clearStaffAssignments),
         onSuccess: (response) => {
             queryClient.invalidateQueries({ queryKey: ['manifest'] });
             toast.success(response.message);
+            // Close removal dialog if open
+            setJumpRemovalDialogOpen(false);
+            setPendingJumpRemoval(null);
         },
         onError: (error) => {
             toast.error(`Failed to remove jump from load: ${getErrorMessage(error)}`);
+            // Close removal dialog on error
+            setJumpRemovalDialogOpen(false);
+            setPendingJumpRemoval(null);
         },
     });
 
@@ -283,9 +307,71 @@ const ManifestingPage: React.FC = () => {
         setJumpModalOpen(true);
     };
 
-    const handleEditJump = (jump: Jump) => {
-        setEditingJump(jump);
+    const handleEditJump = (jump: Jump | JumpSummary) => {
+        // Convert JumpSummary to Jump for the modal
+        if ('jump_type_id' in jump) {
+            setEditingJump(jump as Jump);
+        } else {
+            // For JumpSummary, we need to create a Jump-like object
+            const jumpData = {
+                ...jump,
+                jump_type_id: jump.jump_type?.id || 0,
+                is_manifested: true,
+                child_jumps: [],
+                created_at: '',
+                updated_at: '',
+                created_by: null,
+                updated_by: null,
+                jump_date: null,
+                parent_jump_id: undefined,
+                parent_jump: null,
+                load: null,
+                user: {
+                    id: jump.user_id,
+                    first_name: '',
+                    last_name: jump.user_name || '',
+                    email: '',
+                    display_name: jump.user_name,
+                    roles: [],
+                    avatar_url: null,
+                    created_at: '',
+                    updated_at: ''
+                },
+                jump_type: jump.jump_type || {
+                    id: 0,
+                    name: jump.jump_type_name || '',
+                    short_name: jump.jump_type_name || '',
+                    category: '',
+                    price: 0,
+                    additional_staff: [],
+                    created_at: '',
+                    updated_at: ''
+                }
+            } as unknown as Jump;
+            setEditingJump(jumpData);
+        }
         setJumpModalOpen(true);
+    };
+
+    const handleDeleteJump = async (jump: Jump | JumpSummary) => {
+        try {
+            // If jump is assigned to a load, remove it first
+            if ('load_id' in jump && jump.load_id) {
+                await removeJumpMutation.mutateAsync({ 
+                    jumpId: jump.id, 
+                    clearStaffAssignments: true 
+                });
+            }
+            
+            // Then delete the jump
+            deleteJumpMutation.mutate(jump.id);
+        } catch (error) {
+            console.error('Error removing jump from load:', error);
+        }
+    };
+
+    const handleDeleteJumpFromModal = (jumpId: number) => {
+        deleteJumpMutation.mutate(jumpId);
     };
 
     const handleJumpSave = (data: CreateJumpData | UpdateJumpData) => {
@@ -302,31 +388,52 @@ const ManifestingPage: React.FC = () => {
 
     const handleJumpDropToLoad = (jump: Jump | JumpSummary) => {
         if (selectedLoad) {
-            checkAndAssignJump(jump as Jump, selectedLoad.id); // Cast for now
+            checkAndAssignJump(jump, selectedLoad.id);
         }
     };
 
     const handleJumpDropToList = (jump: Jump | JumpSummary) => {
         if ('load_id' in jump && jump.load_id) {
-            removeJumpMutation.mutate(jump.id);
+            // Check if jump has staff assignments
+            const hasStaffAssignments = jump.staff_assignments && Object.keys(jump.staff_assignments).length > 0;
+            
+            if (hasStaffAssignments) {
+                // Show confirmation dialog
+                setPendingJumpRemoval(jump);
+                setJumpRemovalDialogOpen(true);
+            } else {
+                // Remove directly without staff assignments
+                removeJumpMutation.mutate({ jumpId: jump.id, clearStaffAssignments: false });
+            }
         }
     };
 
     const handleJumpDropToLoadTable = (jump: any, load: LoadSummary) => {
-        checkAndAssignJump(jump as Jump, load.id); // Cast for now
+        checkAndAssignJump(jump, load.id);
     };
 
     const handleJumpDropOnSpaces = (jump: any, load: LoadSummary, reserved: boolean) => {
-        checkAndAssignJump(jump as Jump, load.id, reserved); // Cast for now
+        checkAndAssignJump(jump, load.id, reserved);
     };
 
-    const checkAndAssignJump = (jump: Jump, loadId: number, reserved: boolean = false) => {
+    const checkAndAssignJump = (jump: Jump | JumpSummary, loadId: number, reserved: boolean = false) => {
         const additionalStaff = jump.jump_type?.additional_staff || [];
         
         if (additionalStaff.length > 0) {
-            // Jump requires additional staff, show modal
-            setPendingJumpAssignment({ jump, loadId, reserved });
-            setStaffAssignmentModalOpen(true);
+            // Jump requires additional staff
+            if (jump.staff_assignments && Object.keys(jump.staff_assignments).length > 0) {
+                // Jump has existing staff assignments, transfer them directly
+                assignJumpMutation.mutate({ 
+                    jumpId: jump.id, 
+                    loadId, 
+                    reserved, 
+                    staffAssignments: jump.staff_assignments 
+                });
+            } else {
+                // No existing assignments, show modal
+                setPendingJumpAssignment({ jump, loadId, reserved });
+                setStaffAssignmentModalOpen(true);
+            }
         } else {
             // No additional staff required, assign directly
             assignJumpMutation.mutate({ jumpId: jump.id, loadId, reserved });
@@ -347,6 +454,20 @@ const ManifestingPage: React.FC = () => {
     const handleStaffAssignmentCancel = () => {
         setStaffAssignmentModalOpen(false);
         setPendingJumpAssignment(null);
+    };
+
+    const handleJumpRemovalConfirm = (clearStaffAssignments: boolean) => {
+        if (pendingJumpRemoval) {
+            removeJumpMutation.mutate({ 
+                jumpId: pendingJumpRemoval.id, 
+                clearStaffAssignments 
+            });
+        }
+    };
+
+    const handleJumpRemovalCancel = () => {
+        setJumpRemovalDialogOpen(false);
+        setPendingJumpRemoval(null);
     };
 
     const manifestData = manifestQuery.data;
@@ -468,6 +589,8 @@ const ManifestingPage: React.FC = () => {
                                 jumps={loadJumps}
                                 onJumpDragStart={handleJumpDragStart}
                                 onDrop={handleJumpDropToLoad}
+                                onJumpEdit={handleEditJump}
+                                onJumpDelete={handleDeleteJump}
                                 loading={manifestQuery.isLoading}
                             />
                         </>
@@ -499,6 +622,8 @@ const ManifestingPage: React.FC = () => {
                         onAddJump={handleCreateJump}
                         onJumpDragStart={handleJumpDragStart}
                         onJumpDrop={handleJumpDropToList}
+                        onJumpEdit={handleEditJump}
+                        onJumpDelete={handleDeleteJump}
                         loading={manifestQuery.isLoading}
                     />
                 </Box>
@@ -523,6 +648,7 @@ const ManifestingPage: React.FC = () => {
                         setEditingJump(null);
                     }}
                     onSave={handleJumpSave}
+                    onDelete={handleDeleteJumpFromModal}
                     jump={editingJump}
                     loading={createJumpMutation.isPending || updateJumpMutation.isPending}
                 />
@@ -534,6 +660,14 @@ const ManifestingPage: React.FC = () => {
                     onConfirm={handleStaffAssignmentConfirm}
                     jump={pendingJumpAssignment?.jump || null}
                     loading={assignJumpMutation.isPending}
+                />
+
+                {/* Jump Removal Dialog */}
+                <JumpRemovalDialog
+                    open={jumpRemovalDialogOpen}
+                    onClose={handleJumpRemovalCancel}
+                    onConfirm={handleJumpRemovalConfirm}
+                    jump={pendingJumpRemoval}
                 />
 
                 {/* Delete Confirmation Dialog */}

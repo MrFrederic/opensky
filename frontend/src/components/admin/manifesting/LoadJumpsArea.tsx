@@ -9,12 +9,14 @@ import {
 } from '@mui/icons-material';
 import { Jump } from '@/types';
 import { JumpSummary } from '@/services/manifest';
-import JumpCard from '@/components/common/JumpCard';
+import JumpCard, { JumpCardProps } from '@/components/common/JumpCard';
 
 interface LoadJumpsAreaProps {
   jumps: (Jump | JumpSummary)[];
   onJumpDragStart: (jump: Jump | JumpSummary) => void;
   onDrop: (jump: Jump | JumpSummary) => void;
+  onJumpEdit?: (jump: Jump | JumpSummary) => void;
+  onJumpDelete?: (jump: Jump | JumpSummary) => void;
   loading?: boolean;
 }
 
@@ -22,6 +24,8 @@ const LoadJumpsArea: React.FC<LoadJumpsAreaProps> = ({
   jumps,
   onJumpDragStart,
   onDrop,
+  onJumpEdit,
+  onJumpDelete,
   loading = false,
 }) => {
   const handleDragOver = (e: React.DragEvent) => {
@@ -98,7 +102,10 @@ const LoadJumpsArea: React.FC<LoadJumpsAreaProps> = ({
                       jump={jump}
                       isDraggable={true}
                       variant="assigned"
+                      showActions={true}
                       onDragStart={(_e, jump) => onJumpDragStart(jump as Jump | JumpSummary)}
+                      onEdit={(jump) => onJumpEdit?.(jump as Jump | JumpSummary)}
+                      onDelete={(jump) => onJumpDelete?.(jump as Jump | JumpSummary)}
                       sx={{ mb: 0.5 }}
                     />
 
@@ -110,6 +117,9 @@ const LoadJumpsArea: React.FC<LoadJumpsAreaProps> = ({
                         isDraggable={false}
                         isStaff={true}
                         variant="staff"
+                        showActions={true}
+                        onEdit={(jump) => onJumpEdit?.(jump as Jump | JumpSummary)}
+                        onDelete={(jump) => onJumpDelete?.(jump as Jump | JumpSummary)}
                         sx={{ mb: 0.5 }}
                       />
                     ))}

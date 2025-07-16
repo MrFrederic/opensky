@@ -120,114 +120,30 @@ class CRUDJump(CRUDBase[Jump, JumpCreate, JumpUpdate]):
         staff_assignments: Optional[Dict[str, int]] = None,
         user_id: int
     ) -> Dict[str, Any]:
-        """Assign jump to load and create required staff jumps"""
-        # Get the jump and validate it exists
-        jump = self.get(db, jump_id)
-        if not jump:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Jump not found"
-            )
+        """Assign jump to load and store staff assignments directly in jump object"""
+        # Get and validate jump and load
+        jump = self._get_validated_jump(db, jump_id)
+        load = self._get_validated_load(db, load_id)
         
-        # Get the load and validate it exists
-        load = db.query(Load).options(joinedload(Load.aircraft)).filter(Load.id == load_id).first()
-        if not load:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Load not found"
-            )
+        # Validate user constraints for this load
+        self._validate_user_constraints(db, jump, load_id)
         
-        # Check if jump is already assigned to a load
-        #if jump.load_id:
-        #    raise HTTPException(
-        #        status_code=status.HTTP_400_BAD_REQUEST,
-        #        detail="Jump is already assigned to a load"
-        #    )
+        # Check space availability and get warning if needed
+        warning = self._check_space_availability(db, load, jump, reserved)
         
-        # Check if user already has a jump in this load
-        user_in_load = db.query(Jump).filter(Jump.user_id == jump.user_id, Jump.load_id == load_id, Jump.id != jump.id).first()
-        if user_in_load:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User already has a jump in this load"
-            )
+        # Validate staff assignments if required
+        self._validate_staff_assignments(db, jump, load_id, reserved, staff_assignments)
         
-        # Get current load occupancy with proper space calculations
-        load_jumps = self.get_jumps(db, filters={'load_id': load_id})
-        occupied_public_spaces = len([j for j in load_jumps if not j.reserved])
-        occupied_reserved_spaces = len([j for j in load_jumps if j.reserved])
+        # Clean up existing staff jumps if reassigning within same load
+        if jump.load_id == load_id:
+            self._cleanup_existing_staff_jumps(db, jump_id)
         
-        total_spaces = load.aircraft.max_load
-        remaining_reserved_spaces = load.reserved_spaces - occupied_reserved_spaces
-        remaining_public_spaces = total_spaces - load.reserved_spaces - occupied_public_spaces
+        # Assign jump to load
+        self._assign_jump_to_load(jump, load, reserved, staff_assignments, user_id)
         
-        # Get required additional staff
-        additional_staff_required = jump.jump_type.additional_staff
-        required_spaces = 1 + len(additional_staff_required)  # main jump + staff
-        
-        # Check space availability based on reservation type
-        warning = None
-        if reserved:
-            if remaining_reserved_spaces < required_spaces:
-                warning = f"Load has only {remaining_reserved_spaces} available reserved spaces but {required_spaces} are needed"
-        else:
-            if remaining_public_spaces < required_spaces:
-                warning = f"Load has only {remaining_public_spaces} available public spaces but {required_spaces} are needed"
-        
-        # Assign the main jump to the load
-        jump.load_id = load_id
-        jump.is_manifested = True
-        jump.reserved = reserved
-        jump.updated_by = user_id
-        
-        # Set jump_date if load is already departed
-        if load.status == LoadStatus.DEPARTED:
-            jump.jump_date = load.departure
-        
+        # Create staff jumps
         assigned_jump_ids = [jump_id]
-        
-        # Create staff jumps if required
-        for staff_req in additional_staff_required:
-            staff_user_id = None
-            if staff_assignments:
-                staff_user_id = staff_assignments.get(staff_req.staff_required_role.value)
-            
-            if not staff_user_id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Staff user_id required for role: {staff_req.staff_required_role.value}"
-                )
-            
-            # Validate staff user exists
-            staff_user = db.query(User).filter(User.id == staff_user_id).first()
-            if not staff_user:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Staff user {staff_user_id} not found"
-                )
-            # Check if staff user already has a jump in this load
-            staff_user_in_load = db.query(Jump).filter(Jump.user_id == staff_user_id, Jump.load_id == load_id).first()
-            if staff_user_in_load:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Staff user {staff_user_id} already has a jump in this load"
-                )
-            # Create staff jump
-            staff_jump_type_id = staff_req.staff_default_jump_type_id or jump.jump_type_id
-            staff_jump = Jump(
-                user_id=staff_user_id,
-                jump_type_id=staff_jump_type_id,
-                is_manifested=True,
-                load_id=load_id,
-                reserved=reserved,  # Staff jumps inherit the reservation status
-                parent_jump_id=jump_id,
-                comment=f"Staff for {jump.user.first_name} {jump.user.last_name}",
-                jump_date=load.departure if load.status == LoadStatus.DEPARTED else None,
-                created_by=user_id
-            )
-            db.add(staff_jump)
-            db.flush()  # Flush to get the ID
-            assigned_jump_ids.append(staff_jump.id)
+        assigned_jump_ids.extend(self._create_staff_jumps(db, jump, load, reserved, staff_assignments, user_id))
         
         db.commit()
         
@@ -238,12 +154,167 @@ class CRUDJump(CRUDBase[Jump, JumpCreate, JumpUpdate]):
             "assigned_jump_ids": assigned_jump_ids
         }
 
+    def _get_validated_jump(self, db: Session, jump_id: int) -> Jump:
+        """Get and validate jump exists"""
+        jump = self.get(db, jump_id)
+        if not jump:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Jump not found"
+            )
+        return jump
+
+    def _get_validated_load(self, db: Session, load_id: int) -> Load:
+        """Get and validate load exists"""
+        load = db.query(Load).options(joinedload(Load.aircraft)).filter(Load.id == load_id).first()
+        if not load:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Load not found"
+            )
+        return load
+
+    def _validate_user_constraints(self, db: Session, jump: Jump, load_id: int):
+        """Validate user is not already in this load (unless reassigning same jump)"""
+        user_in_load = db.query(Jump).filter(
+            Jump.user_id == jump.user_id, 
+            Jump.load_id == load_id, 
+            Jump.id != jump.id
+        ).first()
+        
+        # Only block if this is a different jump from the same user in the same load
+        if user_in_load and jump.load_id != load_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User already has a jump in this load"
+            )
+
+    def _check_space_availability(self, db: Session, load: Load, jump: Jump, reserved: bool) -> Optional[str]:
+        """Check space availability and return warning if needed"""
+        load_jumps = self.get_jumps(db, filters={'load_id': load.id})
+        occupied_public_spaces = len([j for j in load_jumps if not j.reserved])
+        occupied_reserved_spaces = len([j for j in load_jumps if j.reserved])
+        
+        total_spaces = load.aircraft.max_load
+        remaining_reserved_spaces = load.reserved_spaces - occupied_reserved_spaces
+        remaining_public_spaces = total_spaces - load.reserved_spaces - occupied_public_spaces
+        
+        additional_staff_required = jump.jump_type.additional_staff
+        required_spaces = 1 + len(additional_staff_required)  # main jump + staff
+        
+        warning = None
+        if reserved:
+            if remaining_reserved_spaces < required_spaces:
+                warning = f"Load has only {remaining_reserved_spaces} available reserved spaces but {required_spaces} are needed"
+        else:
+            if remaining_public_spaces < required_spaces:
+                warning = f"Load has only {remaining_public_spaces} available public spaces but {required_spaces} are needed"
+        
+        return warning
+
+    def _validate_staff_assignments(self, db: Session, jump: Jump, load_id: int, reserved: bool, staff_assignments: Optional[Dict[str, int]]):
+        """Validate staff assignments if required"""
+        additional_staff_required = jump.jump_type.additional_staff
+        if not additional_staff_required:
+            return
+        
+        for staff_req in additional_staff_required:
+            staff_user_id = None
+            if staff_assignments:
+                staff_user_id = staff_assignments.get(str(staff_req.id))
+            
+            if not staff_user_id:
+                # Only require staff for new assignments (not when moving between loads)
+                if not jump.load_id:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Staff user_id required for role: {staff_req.staff_required_role.value}"
+                    )
+                continue
+            
+            # Validate staff user exists
+            staff_user = db.query(User).filter(User.id == staff_user_id).first()
+            if not staff_user:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Staff user {staff_user_id} not found"
+                )
+            
+            # Ensure staff user is not the same as parent jump user
+            if staff_user_id == jump.user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Staff user cannot be the same as the jump user"
+                )
+            
+            # Check if staff user already has a jump in this load with the same reserved state
+            staff_user_in_load = db.query(Jump).filter(
+                Jump.user_id == staff_user_id,
+                Jump.load_id == load_id,
+                Jump.reserved == reserved
+            ).first()
+            if staff_user_in_load:
+                reservation_type = "reserved" if reserved else "non-reserved"
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Staff user {staff_user_id} already has a {reservation_type} jump in this load"
+                )
+
+    def _cleanup_existing_staff_jumps(self, db: Session, jump_id: int):
+        """Remove existing staff jumps when reassigning within same load"""
+        existing_staff_jumps = self.get_jumps(db, filters={'parent_jump_id': jump_id})
+        for staff_jump in existing_staff_jumps:
+            db.delete(staff_jump)
+        db.flush()  # Ensure deletions are processed
+
+    def _assign_jump_to_load(self, jump: Jump, load: Load, reserved: bool, staff_assignments: Optional[Dict[str, int]], user_id: int):
+        """Assign the main jump to the load"""
+        jump.load_id = load.id
+        jump.is_manifested = True
+        jump.reserved = reserved
+        jump.staff_assignments = staff_assignments
+        jump.updated_by = user_id
+        
+        # Set jump_date if load is already departed
+        if load.status == LoadStatus.DEPARTED:
+            jump.jump_date = load.departure
+
+    def _create_staff_jumps(self, db: Session, jump: Jump, load: Load, reserved: bool, staff_assignments: Optional[Dict[str, int]], user_id: int) -> List[int]:
+        """Create staff jumps and return their IDs"""
+        staff_jump_ids = []
+        additional_staff_required = jump.jump_type.additional_staff
+        
+        for staff_req in additional_staff_required:
+            staff_user_id = None
+            if staff_assignments:
+                staff_user_id = staff_assignments.get(str(staff_req.id))
+            
+            if staff_user_id:
+                staff_jump_type_id = staff_req.staff_default_jump_type_id or jump.jump_type_id
+                staff_jump = Jump(
+                    user_id=staff_user_id,
+                    jump_type_id=staff_jump_type_id,
+                    is_manifested=True,
+                    load_id=load.id,
+                    reserved=reserved,
+                    parent_jump_id=jump.id,
+                    comment=f"Staff for {jump.user.first_name} {jump.user.last_name}",
+                    jump_date=load.departure if load.status == LoadStatus.DEPARTED else None,
+                    created_by=user_id
+                )
+                db.add(staff_jump)
+                db.flush()  # Get the ID
+                staff_jump_ids.append(staff_jump.id)
+        
+        return staff_jump_ids
+
     def remove_from_load(
         self, 
         db: Session, 
         *, 
         jump_id: int, 
-        user_id: int
+        user_id: int,
+        clear_staff_assignments: bool = False
     ) -> Dict[str, Any]:
         """Remove jump from load and delete linked staff jumps"""
         # Get the jump and validate it exists
@@ -275,6 +346,11 @@ class CRUDJump(CRUDBase[Jump, JumpCreate, JumpUpdate]):
         jump.reserved = False  # Unset reserved when removing from load
         jump.jump_date = None  # Clear jump date when removing from load
         jump.updated_by = user_id
+        
+        # Handle staff assignments based on user choice
+        if clear_staff_assignments:
+            jump.staff_assignments = None
+        # Otherwise, keep existing staff_assignments for transfer to another load
         
         db.commit()
         

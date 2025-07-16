@@ -17,6 +17,8 @@ interface JumpsListProps {
   onAddJump: () => void;
   onJumpDragStart: (jump: Jump | JumpSummary) => void;
   onJumpDrop?: (jump: Jump | JumpSummary) => void;
+  onJumpEdit?: (jump: Jump | JumpSummary) => void;
+  onJumpDelete?: (jump: Jump | JumpSummary) => void;
   loading?: boolean;
 }
 
@@ -25,6 +27,8 @@ const JumpsList: React.FC<JumpsListProps> = ({
   onAddJump,
   onJumpDragStart,
   onJumpDrop,
+  onJumpEdit,
+  onJumpDelete,
   loading = false,
 }) => {
   const handleDragOver = (e: React.DragEvent) => {
@@ -88,7 +92,10 @@ const JumpsList: React.FC<JumpsListProps> = ({
                 jump={jump}
                 isDraggable={true}
                 variant="default"
+                showActions={true}
                 onDragStart={(_e, jump) => onJumpDragStart(jump as Jump | JumpSummary)}
+                onEdit={(jump) => onJumpEdit?.(jump as Jump | JumpSummary)}
+                onDelete={(jump) => onJumpDelete?.(jump as Jump | JumpSummary)}
                 sx={{ mx: 1, my: 0.5 }}
               />
             ))}

@@ -192,6 +192,7 @@ export interface Jump {
   reserved?: boolean;
   comment?: string;
   parent_jump_id?: number;
+  staff_assignments?: Record<string, number>;
   user?: {
     id: number;
     first_name: string;
@@ -202,10 +203,7 @@ export interface Jump {
     id: number;
     name: string;
     short_name: string;
-    additional_staff: Array<{
-      staff_required_role: string;
-      staff_default_jump_type_id?: number;
-    }>;
+    additional_staff: AdditionalStaff[];
   };
   load?: {
     id: number;

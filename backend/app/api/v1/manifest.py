@@ -6,7 +6,7 @@ from app.api.deps import get_current_user
 from app.core.database import get_db
 from app.crud.loads import load as load_crud
 from app.crud.jumps import jump as jump_crud
-from app.schemas.manifest import ManifestResponse, LoadSummary, JumpSummary
+from app.schemas.manifest import ManifestResponse, LoadSummary, JumpSummary, AdditionalStaffSummary, JumpTypeSummary
 from app.models.users import User
 from app.models.enums import LoadStatus
 
@@ -109,6 +109,24 @@ def get_manifest_data(
             load_jumps = jump_crud.get_load_jumps(db, selected_load_id)
             # Convert jumps to JumpSummary
             for jump_item in load_jumps:
+                # Create jump type summary with additional staff for load jumps
+                jump_type_summary = None
+                if jump_item.jump_type:
+                    additional_staff_summaries = []
+                    for staff in jump_item.jump_type.additional_staff:
+                        additional_staff_summaries.append(AdditionalStaffSummary(
+                            id=staff.id,
+                            staff_required_role=staff.staff_required_role,
+                            staff_default_jump_type_id=staff.staff_default_jump_type_id
+                        ))
+                    
+                    jump_type_summary = JumpTypeSummary(
+                        id=jump_item.jump_type.id,
+                        name=jump_item.jump_type.name,
+                        short_name=jump_item.jump_type.short_name,
+                        additional_staff=additional_staff_summaries
+                    )
+
                 selected_load_jumps.append(JumpSummary(
                     id=jump_item.id,
                     user_id=jump_item.user_id,
@@ -116,7 +134,9 @@ def get_manifest_data(
                     jump_type_name=jump_item.jump_type.name,
                     reserved=jump_item.reserved or False,
                     parent_jump_id=jump_item.parent_jump_id,
-                    load_id=jump_item.load_id
+                    load_id=jump_item.load_id,
+                    staff_assignments=jump_item.staff_assignments,
+                    jump_type=jump_type_summary
                 ))
     
     # Get unassigned manifested jumps (parent_jump_id=None)
@@ -131,6 +151,24 @@ def get_manifest_data(
     # Convert to JumpSummary
     unassigned_jump_summaries = []
     for jump_item in unassigned_jumps:
+        # Create jump type summary with additional staff
+        jump_type_summary = None
+        if jump_item.jump_type:
+            additional_staff_summaries = []
+            for staff in jump_item.jump_type.additional_staff:
+                additional_staff_summaries.append(AdditionalStaffSummary(
+                    id=staff.id,
+                    staff_required_role=staff.staff_required_role,
+                    staff_default_jump_type_id=staff.staff_default_jump_type_id
+                ))
+            
+            jump_type_summary = JumpTypeSummary(
+                id=jump_item.jump_type.id,
+                name=jump_item.jump_type.name,
+                short_name=jump_item.jump_type.short_name,
+                additional_staff=additional_staff_summaries
+            )
+        
         unassigned_jump_summaries.append(JumpSummary(
             id=jump_item.id,
             user_id=jump_item.user_id,
@@ -138,7 +176,9 @@ def get_manifest_data(
             jump_type_name=jump_item.jump_type.name,
             reserved=jump_item.reserved or False,
             parent_jump_id=jump_item.parent_jump_id,
-            load_id=jump_item.load_id
+            load_id=jump_item.load_id,
+            staff_assignments=jump_item.staff_assignments,
+            jump_type=jump_type_summary
         ))
     
     return ManifestResponse(

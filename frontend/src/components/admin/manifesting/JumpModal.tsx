@@ -24,6 +24,7 @@ interface JumpModalProps {
   open: boolean;
   onClose: () => void;
   onSave: (data: CreateJumpData | UpdateJumpData) => void;
+  onDelete?: (id: number) => void;
   jump?: Jump | null;
   loading?: boolean;
 }
@@ -152,7 +153,7 @@ const JumpModal: React.FC<JumpModalProps> = ({
           variant="contained"
           disabled={!isValid || loading}
         >
-          {loading ? 'Saving...' : 'Save'}
+          {loading ? 'Saving...' : jump ? 'Update' : 'Create'}
         </Button>
       </DialogActions>
     </Dialog>

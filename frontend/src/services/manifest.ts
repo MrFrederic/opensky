@@ -22,6 +22,17 @@ export interface JumpSummary {
   reserved: boolean;
   parent_jump_id?: number;
   load_id?: number;
+  staff_assignments?: Record<string, number>;
+  jump_type?: {
+    id: number;
+    name: string;
+    short_name: string;
+    additional_staff: Array<{
+      id: number;
+      staff_required_role: string;
+      staff_default_jump_type_id?: number;
+    }>;
+  };
 }
 
 export interface ManifestResponse {

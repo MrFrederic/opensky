@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, Dict
 from datetime import datetime
 
 
@@ -93,6 +93,7 @@ class JumpResponse(JumpBase):
     id: int
     load_id: Optional[int] = None
     reserved: bool = False
+    staff_assignments: Optional[Dict[str, int]] = None
     user: Optional[UserMinimal] = None
     jump_type: Optional[JumpTypeMinimal] = None
     load: Optional[LoadMinimal] = None
@@ -111,7 +112,7 @@ class JumpLoadAssignment(BaseModel):
     """Schema for assigning jump to load"""
     jump_id: int
     reserved: bool = False
-    staff_assignments: Optional[dict[str, int]] = None  # role -> user_id mapping
+    staff_assignments: Optional[Dict[str, int]] = None  # additional_staff_id -> user_id mapping
 
 
 class JumpLoadAssignmentResponse(BaseModel):
@@ -127,6 +128,11 @@ class JumpLoadRemovalResponse(BaseModel):
     success: bool
     message: str
     removed_jump_ids: List[int] = []
+
+
+class JumpLoadRemovalRequest(BaseModel):
+    """Request for removing jump from load"""
+    clear_staff_assignments: bool = False
 
 
 # =============================================================================

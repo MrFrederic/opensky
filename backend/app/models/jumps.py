@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Date
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Date, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -16,6 +16,7 @@ class Jump(Base):
     comment = Column(Text, nullable=True)
     parent_jump_id = Column(Integer, ForeignKey('jumps.id'), nullable=True)
     jump_date = Column(DateTime(timezone=True), nullable=True)  # DateTime when jump was performed
+    staff_assignments = Column(JSON, nullable=True)  # {additional_staff_id: user_id}
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
