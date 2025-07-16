@@ -1,4 +1,4 @@
-# Dropzone Management System
+# OpenSky Dropzone Management System
 
 A modern, full-stack web application for running your dropzone like a well-oiled (and slightly caffeinated) machine.
 
