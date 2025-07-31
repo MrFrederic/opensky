@@ -68,10 +68,10 @@ const AircraftEdit: React.FC = () => {
   // Create/Update mutations
   const createMutation = useMutation({
     mutationFn: aircraftService.createAircraft,
-    onSuccess: (aircraft) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['aircraft'] });
       toast.success('Aircraft created successfully');
-      navigate(`/admin/aircraft/${aircraft.id}`);
+      navigate(`/admin/aircraft`);
     },
     onError: (error) => {
       toast.error(getErrorMessage(error));

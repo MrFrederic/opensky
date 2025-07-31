@@ -134,10 +134,10 @@ const JumpTypeEdit: React.FC = () => {
   // Create/Update mutations
   const createMutation = useMutation({
     mutationFn: jumpTypesService.createJumpType,
-    onSuccess: (jumpType) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jumpTypes'] });
       toast.success('Jump type created successfully');
-      navigate(`/admin/jump-types/${jumpType.id}`);
+      navigate(`/admin/jump-types`);
     },
     onError: (error) => {
       toast.error(getErrorMessage(error));
